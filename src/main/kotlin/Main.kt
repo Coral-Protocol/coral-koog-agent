@@ -62,7 +62,7 @@ fun main(): Unit = runBlocking {
 
     runBlocking {
         repeat(maxAgentIterations) {
-            println("user message?}")
+            println("user message: ")
             val result = loopAgent.run(readln())
             println(result)
         }
