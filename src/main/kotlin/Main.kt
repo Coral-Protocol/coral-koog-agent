@@ -37,14 +37,7 @@ fun main(): Unit = runBlocking {
         prompt = "You're $agentName",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
-        toolRegistry = toolRegistry,
-        featureContext = {
-            install(EventHandler) {
-                onToolCall { eventContext ->
-                    println("Tool called: tool ${eventContext.tool.name}, args ${eventContext.toolArgs}")
-                }
-            }
-        }) {
+        toolRegistry = toolRegistry) {
         repeat(maxAgentIterations) {
             println("User message: ")
             val userQuery = readln()
