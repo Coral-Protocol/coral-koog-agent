@@ -32,7 +32,7 @@ fun main(): Unit = runBlocking {
         ),
     )
 
-    val loopAgent = actAIAgent<String, String>(
+    val loopAgent = actAIAgent<Nothing?, Nothing?>(
         prompt = "You're an agent.",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
@@ -44,27 +44,28 @@ fun main(): Unit = runBlocking {
                 }
             }
         }) {
-        var responses = requestLLMMultiple(it)
+        repeat(maxAgentIterations) {
+            println("User message: ")
+            val userQuery = readln()
+            var responses = requestLLMMultiple(userQuery)
 
-        while (responses.containsToolCalls()) {
-            val tools = extractToolCalls(responses)
+            while (responses.containsToolCalls()) {
+                val tools = extractToolCalls(responses)
 
-            if (latestTokenUsage() > 100500) {
-                compressHistory()
+                if (latestTokenUsage() > 100500) {
+                    compressHistory()
+                }
+
+                val results = executeMultipleTools(tools)
+                responses = sendMultipleToolResults(results)
             }
-
-            val results = executeMultipleTools(tools)
-            responses = sendMultipleToolResults(results)
+            println("Response: $responses")
         }
-
-        return@actAIAgent responses.single().asAssistantMessage().content
+        return@actAIAgent null
     }
 
+
     runBlocking {
-        repeat(maxAgentIterations) {
-            println("user message: ")
-            val result = loopAgent.run(readln())
-            println(result)
-        }
+        loopAgent.run(null)
     }
 }
