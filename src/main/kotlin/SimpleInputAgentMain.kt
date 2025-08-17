@@ -1,7 +1,6 @@
 package org.coralprotocol.coralserver
 
 import ai.koog.agents.core.agent.*
-import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.PatchedSseClientTransport
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
@@ -10,11 +9,14 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import io.ktor.client.*
 import io.ktor.client.plugins.sse.*
 import kotlinx.coroutines.runBlocking
+import org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample.agentName
+import org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample.defaultDevmodeUrl
+import org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample.maxAgentIterations
 import kotlin.uuid.ExperimentalUuidApi
 
 const val agentName = "exampleAgent"
 const val defaultDevmodeUrl =
-    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=$agentName"
+    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=${agentName}"
 const val stepMessage = "[automated] continue collaborating with other agents"
 val maxAgentIterations = 20
 
@@ -34,7 +36,7 @@ fun main(): Unit = runBlocking {
     )
 
     val loopAgent = actAIAgent<Nothing?, Nothing?>(
-        prompt = "You're $agentName",
+        prompt = "You're ${agentName}",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
         toolRegistry = toolRegistry) {
