@@ -13,8 +13,9 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("ai.koog:koog-agents:0.3.0.2")
-    implementation("ai.koog:agents-mcp:0.3.0.2")
+    val string = "0.3.0.4"
+    implementation("ai.koog:koog-agents:$string")
+    implementation("ai.koog:agents-mcp:$string")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
