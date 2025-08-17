@@ -1,73 +1,70 @@
 package org.coralprotocol.coralserver
 
-
-import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.dsl.builder.simpleStrategy
-import ai.koog.agents.core.dsl.extension.compressHistory
-import ai.koog.agents.core.dsl.extension.executeMultipleTools
-import ai.koog.agents.core.dsl.extension.extractToolCalls
-import ai.koog.agents.core.dsl.extension.iterations
-import ai.koog.agents.core.dsl.extension.latestTokenUsage
-import ai.koog.agents.core.dsl.extension.onAssistantMessage
-import ai.koog.agents.core.dsl.extension.requestLLMMultiple
-import ai.koog.agents.core.dsl.extension.sendMultipleToolResults
-import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.ext.tool.AskUser
-import ai.koog.agents.ext.tool.SayToUser
-import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.agents.core.agent.*
+import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.agents.mcp.McpToolRegistryProvider
+import ai.koog.agents.mcp.PatchedSseClientTransport
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.message.Message
+import io.ktor.client.*
+import io.ktor.client.plugins.sse.*
 import kotlinx.coroutines.runBlocking
+import kotlin.uuid.ExperimentalUuidApi
 
+const val defaultDevmodeUrl =
+    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=exampleAgent"
+const val stepMessage = "[automated] continue collaborating with other agents"
+val maxAgentIterations = 20
+
+@OptIn(ExperimentalUuidApi::class)
 fun main(): Unit = runBlocking {
-    val executor: PromptExecutor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY") ?: throw IllegalArgumentException("OPENAI_API_KEY is not set."))
+    val executor: PromptExecutor = simpleOpenAIExecutor(
+        System.getenv("OPENAI_API_KEY") ?: throw IllegalArgumentException("OPENAI_API_KEY is not set.")
+    )
+    val serverUrl = System.getenv("CORAL_SERVER_URL") ?: defaultDevmodeUrl
+    val toolRegistry = McpToolRegistryProvider.fromTransport(
+        transport = PatchedSseClientTransport(
+            client = HttpClient {
+                install(SSE)
+            },
+            urlString = serverUrl,
+        ),
+    )
 
-    val toolRegistry = ToolRegistry {
-        tool(AskUser)
-        tool(SayToUser)
-    }
-
-    // Create the agent
-    val agent = AIAgent(
-        executor = executor,
-        llmModel = OpenAIModels.Chat.GPT4o,
-        strategy = simpleStrategy("calculator") { input ->
-            while (iterations() < config.maxAgentIterations) {
-                val response: List<Message.Response> = requestLLMMultiple(input)
-                onAssistantMessage(response.first()) { return@simpleStrategy it.content }
-                val tools = extractToolCalls(response)
-
-                if (latestTokenUsage(tools) > 100500) {
-                    compressHistory()
+    val loopAgent = actAIAgent<String, String>(
+        prompt = "You're an agent.",
+        promptExecutor = executor,
+        model = OpenAIModels.Chat.GPT4o,
+        toolRegistry = toolRegistry,
+        featureContext = {
+            install(EventHandler) {
+                onToolCall { eventContext ->
+                    println("Tool called: tool ${eventContext.tool.name}, args ${eventContext.toolArgs}")
                 }
-
-                val results = executeMultipleTools(tools)
-                sendMultipleToolResults(results)
-
             }
-            "Failed to finish the agent in the given number of iterations."
-        },
-        systemPrompt = "You are a calculator.",
-        toolRegistry = toolRegistry
-    ) {
-        handleEvents {
-            onToolCall { eventContext ->
-                println("Tool called: tool ${eventContext.tool.name}, args ${eventContext.toolArgs}")
+        }) {
+        var responses = requestLLMMultiple(it)
+
+        while (responses.containsToolCalls()) {
+            val tools = extractToolCalls(responses)
+
+            if (latestTokenUsage() > 100500) {
+                compressHistory()
             }
 
-            onAgentRunError { eventContext ->
-                println("An error occurred: ${eventContext.throwable.message}\n${eventContext.throwable.stackTraceToString()}")
-            }
-
-            onAgentFinished { eventContext ->
-                println("Result: ${eventContext.result}")
-            }
+            val results = executeMultipleTools(tools)
+            responses = sendMultipleToolResults(results)
         }
+
+        return@actAIAgent responses.single().asAssistantMessage().content
     }
 
     runBlocking {
-        agent.run("(10 + 20) * (5 + 5) / (2 - 11)")
+        repeat(maxAgentIterations) {
+            println("user message?}")
+            val result = loopAgent.run(readln())
+            println(result)
+        }
     }
 }

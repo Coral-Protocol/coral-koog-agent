@@ -8,15 +8,13 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     mavenLocal()
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/caelumf/koog")
-    }
+    maven("https://github.com/CaelumF/koog/raw/master/maven-repo")
 }
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("com.github.caelumf.koog:koog-agents:0.2.1")
+    implementation("ai.koog:koog-agents:0.3.0.2")
+    implementation("ai.koog:agents-mcp:0.3.0.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
