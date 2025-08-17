@@ -1,13 +1,18 @@
 package org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample
 
 import ai.koog.agents.core.agent.*
+import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.agents.mcp.McpToolRegistryProvider
+import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
+import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_VERSION
 import ai.koog.agents.mcp.PatchedSseClientTransport
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import io.ktor.client.*
 import io.ktor.client.plugins.sse.*
+import io.modelcontextprotocol.kotlin.sdk.Implementation
+import io.modelcontextprotocol.kotlin.sdk.client.Client
 import kotlinx.coroutines.runBlocking
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -22,21 +27,22 @@ fun main(): Unit = runBlocking {
     val executor: PromptExecutor = simpleOpenAIExecutor(
         System.getenv("OPENAI_API_KEY") ?: throw IllegalArgumentException("OPENAI_API_KEY is not set.")
     )
-    val serverUrl = System.getenv("CORAL_SERVER_URL") ?: defaultDevmodeUrl
-    val toolRegistry = McpToolRegistryProvider.fromTransport(
-        transport = PatchedSseClientTransport(
-            client = HttpClient {
-                install(SSE)
-            },
-            urlString = serverUrl,
-        ),
-    )
+    val mcpClient = getMcpClient()
+    val toolRegistry = McpToolRegistryProvider.fromClient(mcpClient)
 
-    val loopAgent = actAIAgent<Nothing?, Nothing?>(
+    val loopAgent: ActAIAgent<Nothing?, Nothing?> = actAIAgent<Nothing?, Nothing?>(
         prompt = "You're $agentName",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
-        toolRegistry = toolRegistry) {
+        featureContext = {
+            install(EventHandler.Feature) {
+                onToolCall {
+                    println("Tool call detected: $it")
+                }
+            }
+        },
+        toolRegistry = toolRegistry,
+    ) {
         repeat(maxAgentIterations) {
             println("User message: ")
             val userQuery = readln()
@@ -55,9 +61,25 @@ fun main(): Unit = runBlocking {
             println("Response: $responses")
         }
         return@actAIAgent null
-    }
+    } as ActAIAgent<Nothing?, Nothing?>
+
 
     runBlocking {
         loopAgent.run(null)
     }
+}
+
+private suspend fun getMcpClient(): Client {
+    val serverUrl = System.getenv("CORAL_SERVER_URL") ?: defaultDevmodeUrl
+    val name: String = DEFAULT_MCP_CLIENT_NAME
+    val version: String = DEFAULT_MCP_CLIENT_VERSION
+    val transport = PatchedSseClientTransport(
+        client = HttpClient {
+            install(SSE)
+        },
+        urlString = serverUrl,
+    )
+    val client = Client(clientInfo = Implementation(name = name, version = version))
+    client.connect(transport)
+    return client
 }
