@@ -12,8 +12,9 @@ import io.ktor.client.plugins.sse.*
 import kotlinx.coroutines.runBlocking
 import kotlin.uuid.ExperimentalUuidApi
 
+const val agentName = "exampleAgent"
 const val defaultDevmodeUrl =
-    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=exampleAgent"
+    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=$agentName"
 const val stepMessage = "[automated] continue collaborating with other agents"
 val maxAgentIterations = 20
 
@@ -33,7 +34,7 @@ fun main(): Unit = runBlocking {
     )
 
     val loopAgent = actAIAgent<Nothing?, Nothing?>(
-        prompt = "You're an agent.",
+        prompt = "You're $agentName",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
         toolRegistry = toolRegistry,
@@ -63,7 +64,6 @@ fun main(): Unit = runBlocking {
         }
         return@actAIAgent null
     }
-
 
     runBlocking {
         loopAgent.run(null)
