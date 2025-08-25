@@ -45,22 +45,10 @@ fun main(): Unit = runBlocking {
     val toolRegistry = McpToolRegistryProvider.fromClient(mcpClient)
 
     val loopAgent: ActAIAgent<Nothing?, Nothing?> = actAIAgent<Nothing?, Nothing?>(
-        prompt = "You're $agentName",
+        prompt = "(replaced later)",
         promptExecutor = executor,
         model = OpenAIModels.Chat.GPT4o,
-        featureContext = {
-            install(EventHandler.Feature) {
-                onToolCall {
-                    println("Tool call detected: $it")
-
-                }
-                onBeforeLLMCall() {
-                    runBlocking {
-                        it
-                    }
-                }
-            }
-        },
+        featureContext = {},
         toolRegistry = toolRegistry,
     ) {
         repeat(maxAgentIterations) {
