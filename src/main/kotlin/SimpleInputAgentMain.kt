@@ -16,7 +16,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 const val agentName = "exampleAgent"
 const val defaultDevmodeUrl =
-    "http://localhost:5555/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=${agentName}"
+    "http://localhost:5555/sse/v1/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=$agentName"
 const val stepMessage = "[automated] continue collaborating with other agents"
 val maxAgentIterations = 20
 
