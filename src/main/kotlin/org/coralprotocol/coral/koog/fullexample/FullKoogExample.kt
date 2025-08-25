@@ -112,7 +112,7 @@ suspend fun AIAgentLoopContext.updateSystemResources(client: Client, coralConnec
                 listOf(
                     newSystemMessage
                 ) + messagesWithoutSystemMessage
-            return@rewritePrompt prompt.copy(messages = messagesWithoutSystemMessage)
+            return@rewritePrompt prompt.copy(messages = messagesWithNewSystemMessage)
         }
     }
 }
