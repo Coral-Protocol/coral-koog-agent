@@ -30,9 +30,9 @@ val maxAgentIterations = 20
 fun getOriginalSystemPrompt(coralConnectionUrl: String): String = """
 Ur an agent arry
 
--- Start of messages and status --
-<resource>coral://${(coralConnectionUrl).substringAfter("http://")}</resource>
--- End of messages and status --
+-- Start of messages --
+<resource>MESSAGE_RESOURCE_URI</resource>
+-- End of messagess --
 """.trimIndent()
 
 @OptIn(ExperimentalUuidApi::class)
