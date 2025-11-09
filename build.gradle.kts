@@ -8,14 +8,14 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     mavenLocal()
-    maven("https://github.com/CaelumF/koog/raw/master/maven-repo")
+//    maven("https://github.com/CaelumF/koog/raw/master/maven-repo")
 }
 
 dependencies {
     testImplementation(kotlin("test"))
-    val string = "0.3.0.4"
-    implementation("ai.koog:koog-agents:$string")
-    implementation("ai.koog:agents-mcp:$string")
+    val koogVersion = "0.5.2"
+    implementation("ai.koog:koog-agents:$koogVersion")
+    implementation("ai.koog:agents-mcp:$koogVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 

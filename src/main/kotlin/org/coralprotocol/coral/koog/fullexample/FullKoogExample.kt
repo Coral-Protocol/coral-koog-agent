@@ -1,11 +1,18 @@
 package org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample
 
 import ai.koog.agents.core.agent.*
-import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
+import ai.koog.agents.core.dsl.extension.compressHistory
+import ai.koog.agents.core.dsl.extension.containsToolCalls
+import ai.koog.agents.core.dsl.extension.executeMultipleTools
+import ai.koog.agents.core.dsl.extension.extractToolCalls
+import ai.koog.agents.core.dsl.extension.latestTokenUsage
+import ai.koog.agents.core.dsl.extension.requestLLMMultiple
+import ai.koog.agents.core.dsl.extension.sendMultipleToolResults
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_VERSION
-import ai.koog.agents.mcp.PatchedSseClientTransport
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
@@ -17,6 +24,7 @@ import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.client.Client
+import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import kotlinx.coroutines.runBlocking
 import java.lang.IllegalStateException
 import kotlin.uuid.ExperimentalUuidApi
@@ -44,34 +52,35 @@ fun main(): Unit = runBlocking {
     val mcpClient = getMcpClient(serverUrl)
     val toolRegistry = McpToolRegistryProvider.fromClient(mcpClient)
 
-    val loopAgent: ActAIAgent<Nothing?, Nothing?> = actAIAgent<Nothing?, Nothing?>(
-        prompt = "(replaced later)",
+    val loopAgent = AIAgent(
+        systemPrompt = "(replaced later)",
         promptExecutor = executor,
-        model = OpenAIModels.Chat.GPT4o,
-        featureContext = {},
+        llmModel = OpenAIModels.Chat.GPT4o,
+//        featureContext = {},
         toolRegistry = toolRegistry,
-    ) {
-        repeat(maxAgentIterations) {
-            println("User message: ")
-            val userQuery = readln()
-            updateSystemResources(mcpClient, serverUrl)
-            var responses = requestLLMMultiple(userQuery)
-
-            while (responses.containsToolCalls()) {
+        strategy = functionalStrategy { input: Nothing? ->
+            repeat(maxAgentIterations) {
+                println("User message: ")
+                val userQuery = readln()
                 updateSystemResources(mcpClient, serverUrl)
-                val tools = extractToolCalls(responses)
+                var responses = requestLLMMultiple(userQuery)
 
-                if (latestTokenUsage() > 100500) {
-                    compressHistory()
+                while (responses.containsToolCalls()) {
+                    updateSystemResources(mcpClient, serverUrl)
+                    val tools = extractToolCalls(responses)
+
+                    if (latestTokenUsage() > 100500) {
+                        compressHistory()
+                    }
+
+                    val results = executeMultipleTools(tools)
+                    responses = sendMultipleToolResults(results)
                 }
-
-                val results = executeMultipleTools(tools)
-                responses = sendMultipleToolResults(results)
+                println("Response: $responses")
             }
-            println("Response: $responses")
+
         }
-        return@actAIAgent null
-    } as ActAIAgent<Nothing?, Nothing?>
+    )
 
 
     runBlocking {
@@ -82,7 +91,7 @@ fun main(): Unit = runBlocking {
 private suspend fun getMcpClient(serverUrl: String): Client {
     val name: String = DEFAULT_MCP_CLIENT_NAME
     val version: String = DEFAULT_MCP_CLIENT_VERSION
-    val transport = PatchedSseClientTransport(
+    val transport = SseClientTransport(
         client = HttpClient {
             install(SSE)
         },
@@ -93,7 +102,7 @@ private suspend fun getMcpClient(serverUrl: String): Client {
     return client
 }
 
-suspend fun AIAgentLoopContext.updateSystemResources(client: Client, coralConnectionUrl: String) {
+suspend fun AIAgentFunctionalContext.updateSystemResources(client: Client, coralConnectionUrl: String) {
     val newSystemMessage = Message.System(
         injectedWithMcpResources(client, getOriginalSystemPrompt(coralConnectionUrl)),
         RequestMetaInfo(kotlinx.datetime.Clock.System.now())
