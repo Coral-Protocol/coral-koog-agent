@@ -95,7 +95,3 @@ The implementation is in `src/main/kotlin/org/coralprotocol/coral/koog/fullexamp
 ## Devmode notes
 
 You can run locally using a devmode URL for the MCP SSE connection via `CORAL_SERVER_URL` (see example in Docker command above). In devmode, the agent will still read from MCP resources as exposed by Coral.
-
-## Reference Python agent
-
-See `langchain-agent/` for a working Python template that uses the same Coral resources and claims flow. The Kotlin agent mirrors these concepts with the Koog framework.
