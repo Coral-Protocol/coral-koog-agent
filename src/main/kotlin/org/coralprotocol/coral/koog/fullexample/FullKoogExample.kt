@@ -13,11 +13,11 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import io.ktor.client.*
+import io.ktor.client.plugins.sse.*
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.client.Client
-import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -45,13 +45,14 @@ $systemPrompt $extra
 @OptIn(ExperimentalUuidApi::class)
 fun main(): Unit = runBlocking {
     val modelApiKey = System.getenv("MODEL_API_KEY") ?: System.getenv("OPENAI_API_KEY")
-        ?: error("MODEL_API_KEY (or OPENAI_API_KEY) is required")
+    ?: error("MODEL_API_KEY (or OPENAI_API_KEY) is required")
     val executor: PromptExecutor = simpleOpenAIExecutor(modelApiKey)
 
     val serverUrl = System.getenv("CORAL_CONNECTION_URL")
         ?: System.getenv("CORAL_SERVER_URL")
         ?: defaultDevmodeUrl
 
+    println("Connecting to MCP server at $serverUrl")
     val mcpClient = getMcpClient(serverUrl)
     val toolRegistry = McpToolRegistryProvider.fromClient(mcpClient)
 
@@ -61,7 +62,8 @@ fun main(): Unit = runBlocking {
         llmModel = OpenAIModels.Chat.GPT4o,
         toolRegistry = toolRegistry,
         strategy = functionalStrategy { _: Nothing? ->
-            val maxIterations = (System.getenv("MAX_ITERATIONS")?.toDoubleOrNull() ?: DEFAULT_MAX_ITERATIONS.toDouble()).toInt()
+            val maxIterations =
+                (System.getenv("MAX_ITERATIONS")?.toDoubleOrNull() ?: DEFAULT_MAX_ITERATIONS.toDouble()).toInt()
             val claimHandler = ClaimHandler(currency = "usd")
 
             repeat(maxIterations) { _ ->
@@ -104,8 +106,10 @@ fun main(): Unit = runBlocking {
 private suspend fun getMcpClient(serverUrl: String): Client {
     val name: String = DEFAULT_MCP_CLIENT_NAME
     val version: String = DEFAULT_MCP_CLIENT_VERSION
-    val transport = SseClientTransport(
-        client = HttpClient(),
+    val transport = PatchedSseClientTransport(
+        client = HttpClient {
+            install(SSE)
+        },
         urlString = serverUrl,
     )
     val client = Client(clientInfo = Implementation(name = name, version = version))
