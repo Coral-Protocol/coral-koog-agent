@@ -1,11 +1,12 @@
-package org.coralprotocol.coralserver.org.coralprotocol.coral.koog.fullexample
+package org.coralprotocol.coral.koog.fullexample
 
-import ai.koog.agents.core.agent.*
-import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
+import ai.koog.agents.core.agent.functionalStrategy
+import ai.koog.agents.core.dsl.extension.*
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_VERSION
-import ai.koog.agents.mcp.PatchedSseClientTransport
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
@@ -18,61 +19,84 @@ import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import kotlinx.coroutines.runBlocking
-import java.lang.IllegalStateException
+import kotlinx.datetime.Clock
 import kotlin.uuid.ExperimentalUuidApi
 
-const val agentName = "exampleAgent"
-const val defaultDevmodeUrl =
+private const val agentName = "koog-agent"
+private const val defaultDevmodeUrl =
     "http://localhost:5555/sse/v1/devmode/exampleApplicationId/examplePrivacyKey/exampleSessionId/sse?agentId=$agentName"
-//const val stepMessage = "[automated] continue collaborating with other agents"
-val maxAgentIterations = 20
+private const val USD_PER_TOKEN = 0.000001
+private const val DEFAULT_MAX_ITERATIONS = 10
 
-fun getOriginalSystemPrompt(coralConnectionUrl: String): String = """
-Ur an agent arry
+private fun buildSystemPrompt(): String {
+    val systemPrompt = System.getenv("SYSTEM_PROMPT")
+        ?: error("SYSTEM_PROMPT is required (provided by Coral via coral-agent.toml)")
+    val extra = System.getenv("CORAL_PROMPT_SYSTEM") ?: ""
+    return """
+$systemPrompt $extra
 
--- Start of messages --
-<resource>MESSAGE_RESOURCE_URI</resource>
--- End of messagess --
+-- Start of messages and status --
+<resource>coral://agent/instruction</resource>
+<resource>coral://messages</resource>
+-- End of messages and status --
 """.trimIndent()
+}
 
 @OptIn(ExperimentalUuidApi::class)
 fun main(): Unit = runBlocking {
-    val executor: PromptExecutor = simpleOpenAIExecutor(
-        System.getenv("OPENAI_API_KEY") ?: throw IllegalArgumentException("OPENAI_API_KEY is not set.")
-    )
-    val serverUrl = System.getenv("CORAL_SERVER_URL") ?: defaultDevmodeUrl
+    val modelApiKey = System.getenv("MODEL_API_KEY") ?: System.getenv("OPENAI_API_KEY")
+    ?: error("MODEL_API_KEY (or OPENAI_API_KEY) is required")
+    val executor: PromptExecutor = simpleOpenAIExecutor(modelApiKey)
+
+    val serverUrl = System.getenv("CORAL_CONNECTION_URL")
+        ?: System.getenv("CORAL_SERVER_URL")
+        ?: defaultDevmodeUrl
+
+    println("Connecting to MCP server at $serverUrl")
     val mcpClient = getMcpClient(serverUrl)
     val toolRegistry = McpToolRegistryProvider.fromClient(mcpClient)
 
-    val loopAgent: ActAIAgent<Nothing?, Nothing?> = actAIAgent<Nothing?, Nothing?>(
-        prompt = "(replaced later)",
+    val loopAgent = AIAgent(
+        systemPrompt = "(replaced later)",
         promptExecutor = executor,
-        model = OpenAIModels.Chat.GPT4o,
-        featureContext = {},
+        llmModel = OpenAIModels.Chat.GPT4o,
         toolRegistry = toolRegistry,
-    ) {
-        repeat(maxAgentIterations) {
-            println("User message: ")
-            val userQuery = readln()
-            updateSystemResources(mcpClient, serverUrl)
-            var responses = requestLLMMultiple(userQuery)
+        strategy = functionalStrategy { _: Nothing? ->
+            val maxIterations =
+                (System.getenv("MAX_ITERATIONS")?.toDoubleOrNull() ?: DEFAULT_MAX_ITERATIONS.toDouble()).toInt()
+            val claimHandler = ClaimHandler(currency = "usd")
 
-            while (responses.containsToolCalls()) {
-                updateSystemResources(mcpClient, serverUrl)
-                val tools = extractToolCalls(responses)
+            repeat(maxIterations) { _ ->
+                if (claimHandler.noBudget()) return@functionalStrategy
 
-                if (latestTokenUsage() > 100500) {
-                    compressHistory()
+                updateSystemResources(mcpClient)
+                var responses = requestLLMMultiple("[automated] continue collaborating with other agents")
+
+                while (responses.containsToolCalls()) {
+                    updateSystemResources(mcpClient)
+
+                    if (latestTokenUsage() > 100_000) {
+                        compressHistory()
+                    }
+
+                    val tools = extractToolCalls(responses)
+                    val results = executeMultipleTools(tools)
+                    responses = sendMultipleToolResults(results)
                 }
 
-                val results = executeMultipleTools(tools)
-                responses = sendMultipleToolResults(results)
+                val tokens = latestTokenUsage()
+                if (tokens > 0) {
+                    val toClaim = tokens.toDouble() * USD_PER_TOKEN
+                    try {
+                        claimHandler.claim(toClaim)
+                    } catch (e: Exception) {
+                        // If a claim fails, stop to avoid unpaid work when orchestrated
+                        return@functionalStrategy
+                    }
+                }
             }
-            println("Response: $responses")
         }
-        return@actAIAgent null
-    } as ActAIAgent<Nothing?, Nothing?>
-
+    )
 
     runBlocking {
         loopAgent.run(null)
@@ -93,47 +117,33 @@ private suspend fun getMcpClient(serverUrl: String): Client {
     return client
 }
 
-suspend fun AIAgentLoopContext.updateSystemResources(client: Client, coralConnectionUrl: String) {
+suspend fun AIAgentFunctionalContext.updateSystemResources(client: Client) {
     val newSystemMessage = Message.System(
-        injectedWithMcpResources(client, getOriginalSystemPrompt(coralConnectionUrl)),
-        RequestMetaInfo(kotlinx.datetime.Clock.System.now())
+        injectedWithMcpResources(client, buildSystemPrompt()),
+        RequestMetaInfo(Clock.System.now())
     )
     return llm.writeSession {
         rewritePrompt { prompt ->
-            if (prompt.messages.firstOrNull() !is Message.System) {
-                throw IllegalStateException("First message isn't a system message")
-            }
-            if (prompt.messages.count { it is Message.System } != 1) {
-                throw IllegalStateException("Not exactly 1 system message")
-            }
-
+            require(prompt.messages.firstOrNull() is Message.System) { "First message isn't a system message" }
+            require(prompt.messages.count { it is Message.System } == 1) { "Not exactly 1 system message" }
             val messagesWithoutSystemMessage = prompt.messages.drop(1)
-            val messagesWithNewSystemMessage =
-                listOf(
-                    newSystemMessage
-                ) + messagesWithoutSystemMessage
-            return@rewritePrompt prompt.copy(messages = messagesWithNewSystemMessage)
+            val messagesWithNewSystemMessage = listOf(newSystemMessage) + messagesWithoutSystemMessage
+            prompt.copy(messages = messagesWithNewSystemMessage)
         }
     }
 }
 
 private suspend fun injectedWithMcpResources(client: Client, original: String): String {
-    // Find all occurrences of <resource>...</resource> in the original string and their URIs
     val resourceRegex = "<resource>(.*?)</resource>".toRegex()
     val matches = resourceRegex.findAll(original)
     val uris = matches.map { it.groupValues[1] }.toList()
-    if (uris.isEmpty()) {
-        return original
-    }
+    if (uris.isEmpty()) return original
 
     val resolvedResources = uris.map { uri ->
         val resource = client.readResource(ReadResourceRequest(uri = uri))
-        val contents =
-            resource?.contents?.joinToString("\n") { (it as TextResourceContents).text }
-                ?: throw IllegalStateException("No contents for resource $uri")
+        val contents = resource.contents.joinToString("\n") { (it as TextResourceContents).text }
         "<resource uri=\"$uri\">\n$contents\n</resource>"
     }
-    // reduce original by replacing each <resource>...</resource> with the corresponding resolved resource
     var result = original
     matches.forEachIndexed { index, matchResult ->
         result = result.replace(matchResult.value, resolvedResources[index])
