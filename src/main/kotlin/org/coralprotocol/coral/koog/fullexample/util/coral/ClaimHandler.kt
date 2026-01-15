@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample.coral
+package org.coralprotocol.coral.koog.fullexample.util.coral
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.ResponseException

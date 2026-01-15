@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample.coral
+package org.coralprotocol.coral.koog.fullexample.util.coral
 
 import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME

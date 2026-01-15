@@ -15,7 +15,7 @@ import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.coralprotocol.coral.koog.fullexample.coral.*
+import org.coralprotocol.coral.koog.fullexample.util.coral.*
 import org.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
@@ -37,10 +37,9 @@ fun main() {
         println("Connecting to MCP server at ${settings.serverUrl}")
         val coralMcpClient = getMcpClient(settings.serverUrl)
         val coralToolRegistry = McpToolRegistryProvider.fromClient(coralMcpClient)
-//        val exampleMcpToolRegistry = McpToolRegistryProvider.fromTransport()
         val toolRegistry = ToolRegistry {
             tools(coralToolRegistry.tools)
-
+            //{CORALIZER:INSIDE_TOOL_REGISTRY_BLOCK}
             // Add more local tools here as desired
         }
 
