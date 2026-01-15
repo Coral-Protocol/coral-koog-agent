@@ -1,5 +1,10 @@
-package org.coralprotocol.coral.koog.fullexample
+package ai.coralprotocol.coral.koog.fullexample
 
+import ai.coralprotocol.coral.koog.fullexample.util.coral.ClaimHandler
+import ai.coralprotocol.coral.koog.fullexample.util.coral.USD_PER_TOKEN
+import ai.coralprotocol.coral.koog.fullexample.util.coral.buildInitialUserMessage
+import ai.coralprotocol.coral.koog.fullexample.util.coral.getMcpClient
+import ai.coralprotocol.coral.koog.fullexample.util.coral.updateSystemResources
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.functionalStrategy
 import ai.koog.agents.core.dsl.extension.executeMultipleTools
@@ -15,15 +20,13 @@ import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.coralprotocol.coral.koog.fullexample.util.coral.*
-import org.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
+import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 
 
 @OptIn(ExperimentalUuidApi::class)
 fun main() {
-
     runBlocking {
         val settings = AgentSettingsLoader.load()
         val executor: PromptExecutor = SingleLLMPromptExecutor(
@@ -61,11 +64,8 @@ fun main() {
 
                         updateSystemResources(coralMcpClient, settings)
                         val response =
-                            if (i == 0) {
-                                requestLLMOnlyCallingTools(buildInitialUserMessage(settings))
-                            } else requestLLMOnlyCallingTools(
-                                settings.followUpUserPrompt
-                            )
+                            requestLLMOnlyCallingTools(if (i == 0) buildInitialUserMessage(settings) else settings.followUpUserPrompt)
+
                         println("Iteration $i LLM response: ${response.content}")
                         val toolsToCall = extractToolCalls(listOf(response))
                         println("Extracted tool calls: ${toolsToCall.joinToString { it.tool }}")
@@ -92,6 +92,7 @@ fun main() {
                                 claimHandler.claim(toClaim)
                             } catch (e: Exception) {
                                 // If a claim fails, stop to avoid unpaid work when orchestrated
+                                e.printStackTrace()
                                 return@functionalStrategy
                             }
                         }

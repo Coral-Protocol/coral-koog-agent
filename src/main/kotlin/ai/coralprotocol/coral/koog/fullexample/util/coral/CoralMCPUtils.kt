@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample.util.coral
+package ai.coralprotocol.coral.koog.fullexample.util.coral
 
 import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
@@ -14,8 +14,8 @@ import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import kotlinx.datetime.Clock
-import org.coralprotocol.coral.koog.fullexample.ResolvedAgentSettings
-import org.coralprotocol.coral.koog.fullexample.util.buildIndentedString
+import ai.coralprotocol.coral.koog.fullexample.ResolvedAgentSettings
+import ai.coralprotocol.coral.koog.fullexample.util.buildIndentedString
 import kotlin.time.Duration.Companion.seconds
 
 const val USD_PER_TOKEN = 0.000001

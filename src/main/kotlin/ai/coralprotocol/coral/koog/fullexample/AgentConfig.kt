@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample
+package ai.coralprotocol.coral.koog.fullexample
 
 /**
  * Minimal config loader that reads values from environment variables.

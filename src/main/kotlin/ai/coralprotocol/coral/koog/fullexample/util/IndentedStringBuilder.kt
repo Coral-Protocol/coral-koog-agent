@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample.util
+package ai.coralprotocol.coral.koog.fullexample.util
 
 class IndentedStringBuilder(private val indent: String = "  ") {
     private val builder = StringBuilder()

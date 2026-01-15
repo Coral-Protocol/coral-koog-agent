@@ -1,4 +1,4 @@
-package org.coralprotocol.coral.koog.fullexample.util
+package ai.coralprotocol.coral.koog.fullexample.util
 
 import ai.koog.prompt.executor.clients.LLModelDefinitions
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels

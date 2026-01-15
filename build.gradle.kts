@@ -5,7 +5,7 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.2"
 }
 
-group = "org.coralprotocol" //{CORALIZER:BUILD_GROUP}
+group = "ai.coralprotocol" //{CORALIZER:BUILD_GROUP}
 version = "1.0-SNAPSHOT" //{CORALIZER:BUILD_VERSION}
 
 repositories {
@@ -30,7 +30,7 @@ dependencies {
 
 application {
     // Kotlin top-level main in Main.kt compiles to *Kt suffix
-    mainClass.set("org.coralprotocol.coral.koog.fullexample.MainKt") //{CORALIZER:APPLICATION_MAIN_CLASS}
+    mainClass.set("ai.coralprotocol.coral.koog.fullexample.MainKt") //{CORALIZER:APPLICATION_MAIN_CLASS}
 }
 
 graalvmNative {
@@ -38,7 +38,7 @@ graalvmNative {
     binaries {
         named("main") {
             imageName.set("koog-coral-agent") //{CORALIZER:NATIVE_BINARY_IMAGE_NAME}
-            mainClass.set("org.coralprotocol.coral.koog.fullexample.MainKt") //{CORALIZER:NATIVE_BINARY_MAIN_CLASS}
+            mainClass.set("ai.coralprotocol.coral.koog.fullexample.MainKt") //{CORALIZER:NATIVE_BINARY_MAIN_CLASS}
             buildArgs.addAll(
                 listOf(
                     "--no-fallback",
