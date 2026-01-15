@@ -4,9 +4,47 @@ version = "0.1.0"
 description = "A Koog (Kotlin) example agent for Coral that supports MCP resources and Coral claims."
 
 [options]
-SYSTEM_PROMPT = { type = "string", required = true, description = "The system prompt to use" }
-MODEL_API_KEY = { type = "string", required = true, description = "The API key for the LLM provider (OpenAI compatible)" }
 MAX_ITERATIONS = { type = "number", default = 10, description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
+
+[options.SYSTEM_PROMPT]
+type = "string"
+description = "The system prompt to use"
+default = """
+You are an AI agent designed to assist users by leveraging available tools and resources. Follow the user's instructions carefully and utilize the tools at your disposal to provide accurate and helpful responses.
+
+-- Start of messages and status --
+<resource>coral://instruction</resource>
+<resource>coral://state</resource>
+-- End of messages and status --
+
+"""
+
+[options.EXTRA_SYSTEM_PROMPT]
+type = "string"
+description = "Additional system prompt instructions to customize the agent's behavior."
+default = ""
+
+[options.EXTRA_INITIAL_USER_PROMPT]
+type = "string"
+description = "Additional instructions to be included in the initial user message."
+default = ""
+
+[options.FOLLOWUP_USER_PROMPT]
+type = "string"
+description = "The prompt to use for follow-up iterations."
+default = "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability."
+
+# Uncomment this option to pass in the API key as an option instead of relying on additional_docker_environment.MODEL_PROVIDER_URL
+#[options.MODEL_PROVIDER_URL]
+#type = "string"
+#description = "The base URL for the LLM provider API (OpenAI compatible)"
+#default = "https://openrouter.ai/api/v1/chat/completions"
+
+# Uncomment this option to pass in the API key as an option instead of relying on additional_docker_environment.MODEL_API_KEY
+#MODEL_API_KEY = { type = "string", required = true, description = "The API key for the LLM provider (OpenAI compatible)" }
+
+#MODEL_ID = { type = "string", default = "openai/gpt-5-mini", description = "The model ID to use for the LLM provider" }
+
 
 [runtimes.executable]
 command = ["./gradlew", "run"]
