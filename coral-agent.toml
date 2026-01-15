@@ -6,33 +6,23 @@ description = "A Koog (Kotlin) example agent for Coral that supports MCP resourc
 [options]
 MAX_ITERATIONS = { type = "number", default = 10, description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
 
-[options.SYSTEM_PROMPT]
-type = "string"
-description = "The system prompt to use"
-default = """
-You are an AI agent designed to assist users by leveraging available tools and resources. Follow the user's instructions carefully and utilize the tools at your disposal to provide accurate and helpful responses.
-
--- Start of messages and status --
-<resource>coral://instruction</resource>
-<resource>coral://state</resource>
--- End of messages and status --
-
-"""
-
 [options.EXTRA_SYSTEM_PROMPT]
 type = "string"
 description = "Additional system prompt instructions to customize the agent's behavior."
 default = ""
+display.multiline = true
 
 [options.EXTRA_INITIAL_USER_PROMPT]
 type = "string"
 description = "Additional instructions to be included in the initial user message."
 default = ""
+display.multiline = true
 
 [options.FOLLOWUP_USER_PROMPT]
 type = "string"
 description = "The prompt to use for follow-up iterations."
 default = "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability."
+display.multiline = true
 
 # Uncomment this option to pass in the API key as an option instead of relying on additional_docker_environment.MODEL_PROVIDER_URL
 #[options.MODEL_PROVIDER_URL]
@@ -45,6 +35,20 @@ default = "[automated message] Continue fulfilling your responsibilities collabo
 
 #MODEL_ID = { type = "string", default = "openai/gpt-5-mini", description = "The model ID to use for the LLM provider" }
 
+
+[options.SYSTEM_PROMPT]
+type = "string"
+description = "The system prompt to use"
+default = """
+You are an AI agent designed to assist users by leveraging available tools and resources. Follow the user's instructions carefully and utilize the tools at your disposal to provide accurate and helpful responses.
+
+-- Start of messages and status --
+<resource>coral://instruction</resource>
+<resource>coral://state</resource>
+-- End of messages and status --
+
+"""
+display.multiline = true
 
 [runtimes.executable]
 command = ["./gradlew", "run"]
