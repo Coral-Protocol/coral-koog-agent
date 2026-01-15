@@ -26,9 +26,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-#
-COPY --from=builder /workspace/build/native/nativeCompile/agent /app/agent
+COPY --from=builder /workspace/build/native/nativeCompile/ /app/
 COPY --from=builder /workspace/coral-agent.toml /app/coral-agent.toml
+
+# Since we can't know the name of the generated executable ahead of time, we find it and rename it to a stable name "agent"
+RUN rm -rf /app/reports && \
+    file_count=$(find /app -maxdepth 1 -type f ! -name 'coral-agent.toml' | wc -l) && \
+    if [ "$file_count" -ne 1 ]; then \
+        echo "Expected exactly 1 executable file, found $file_count" && exit 1; \
+    fi && \
+    mv /app/$(find /app -maxdepth 1 -type f ! -name 'coral-agent.toml' -printf '%f') /app/agent
 
 RUN useradd -r -u 1000 -g root appuser && \
     chown -R appuser:root /app && \
