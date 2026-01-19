@@ -8,8 +8,8 @@ import ai.koog.prompt.llm.LLModel
 
 
 fun findKoogModelByName(
-    id: String, modelObjects: List<LLModelDefinitions> = listOf(
-        OpenRouterModels, OpenAIModels, AnthropicModels
+    id: String, modelObjects: List<Any> = listOf(
+        OpenRouterModels, OpenAIModels.Chat, AnthropicModels
     )
 ): LLModel {
     val allLmModels: List<LLModel> = modelObjects.flatMap {
