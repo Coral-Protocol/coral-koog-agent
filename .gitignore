@@ -45,3 +45,4 @@ bin/
 .DS_Store
 agent_log.json
 .idea
+coral-agent.dev.env

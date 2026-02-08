@@ -1,5 +1,6 @@
 package ai.coralprotocol.coral.koog.fullexample.util.coral
 
+import ai.coralprotocol.coral.koog.fullexample.CoralSettings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.post
@@ -19,7 +20,7 @@ class ClaimError(message: String, val statusCode: Int, val body: String?) : Runt
  *   - CORAL_SEND_CLAIMS == "1" to enable claim calls
  *   - CORAL_API_URL and CORAL_SESSION_ID must be provided by Coral when enabled
  */
-class ClaimHandler(private val currency: String = "micro_coral") : AutoCloseable {
+class ClaimHandler(private val coralSettings: CoralSettings? = null, private val currency: String = "micro_coral") : AutoCloseable {
     private var remaining: Double? = null
     private val http = HttpClient() // engine is provided transitively by koog
 
@@ -38,16 +39,16 @@ class ClaimHandler(private val currency: String = "micro_coral") : AutoCloseable
      * Returns the remaining budget in the same currency.
      */
     suspend fun claim(amount: Double): Double {
-        val sendClaims = System.getenv("CORAL_SEND_CLAIMS") ?: "0"
-        if (sendClaims == "0") {
+        val sendClaims = coralSettings?.sendClaims ?: System.getenv("CORAL_SEND_CLAIMS")?.toIntOrNull() ?: 0
+        if (sendClaims == 0) {
             // Not orchestrated - skip claim
             println("[ClaimHandler] Not orchestrated (CORAL_SEND_CLAIMS=0) - skipping claim of $amount $currency")
             return remaining ?: Double.POSITIVE_INFINITY
         }
 
-        val coralApiUrl = System.getenv("CORAL_API_URL")
+        val coralApiUrl = coralSettings?.apiUrl ?: System.getenv("CORAL_API_URL")
             ?: throw IllegalArgumentException("CORAL_API_URL must be set by Coral when CORAL_SEND_CLAIMS=1")
-        val sessionId = System.getenv("CORAL_SESSION_ID")
+        val sessionId = coralSettings?.sessionId ?: System.getenv("CORAL_SESSION_ID")
             ?: throw IllegalArgumentException("CORAL_SESSION_ID must be set by Coral when CORAL_SEND_CLAIMS=1")
 
         val json = """{"amount":{"type":"$currency","amount":$amount}}"""

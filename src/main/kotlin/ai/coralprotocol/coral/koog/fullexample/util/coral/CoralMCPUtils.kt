@@ -1,8 +1,12 @@
 package ai.coralprotocol.coral.koog.fullexample.util.coral
 
+import ai.coralprotocol.coral.koog.fullexample.ResolvedAgentSettings
+import ai.coralprotocol.coral.koog.fullexample.util.buildIndentedString
 import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
+import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_VERSION
+import ai.koog.agents.mcp.defaultStdioTransport
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import io.ktor.client.*
@@ -12,10 +16,13 @@ import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.client.Client
+import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
 import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
+import io.modelcontextprotocol.kotlin.sdk.client.StreamableHttpClientTransport
+import io.modelcontextprotocol.kotlin.sdk.shared.Transport
+import io.modelcontextprotocol.kotlin.sdk.types.ClientCapabilities
 import kotlinx.datetime.Clock
-import ai.coralprotocol.coral.koog.fullexample.ResolvedAgentSettings
-import ai.coralprotocol.coral.koog.fullexample.util.buildIndentedString
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
 const val USD_PER_TOKEN = 0.000001
@@ -45,7 +52,33 @@ fun buildInitialUserMessage(settings: ResolvedAgentSettings): String = buildInde
 }
 
 
-suspend fun getMcpClient(serverUrl: String): Client {
+suspend fun getMcpClientStreamableHttp(serverUrl: String): Client {
+    val transport = StreamableHttpClientTransport(
+        client = HttpClient {
+            install(SSE)
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
+                connectTimeoutMillis = 60000
+                socketTimeoutMillis = 60000
+            }
+        },
+        url = serverUrl,
+        reconnectionTime = 10.seconds
+    )
+    val client = Client(
+        clientInfo = Implementation(name = DEFAULT_MCP_CLIENT_NAME, version = DEFAULT_MCP_CLIENT_VERSION),
+        options = ClientOptions(
+            ClientCapabilities(), enforceStrictCapabilities = false
+        )
+    )
+    client.connect(transport)
+    transport.onError { e ->
+        e.printStackTrace()
+    }
+    return client
+}
+
+suspend fun getMcpClientSse(serverUrl: String): Client {
     val name: String = DEFAULT_MCP_CLIENT_NAME
     val version: String = DEFAULT_MCP_CLIENT_VERSION
     val transport = SseClientTransport(
@@ -61,10 +94,120 @@ suspend fun getMcpClient(serverUrl: String): Client {
         urlString = serverUrl,
         reconnectionTime = 61.seconds
     )
-    val client = Client(clientInfo = Implementation(name = name, version = version))
+
+    val client = Client(
+        clientInfo = Implementation(name = name, version = version), options = ClientOptions(
+            ClientCapabilities(), enforceStrictCapabilities = false
+        )
+    )
+    transport.onError { e ->
+        e.printStackTrace()
+    }
+    client.connect(transport)
+
+    return client
+}
+
+/**
+ * Utilities for launching MCP servers via Stdio.
+ */
+object McpProcessUtils {
+    /**
+     * Launch a process with npx.
+     * Note: We don't use -y by default to avoid surprise installations on developer machines.
+     */
+    fun npx(pkg: String, vararg args: String, env: Map<String, String> = emptyMap(), autoInstall: Boolean = false): Process {
+        val command = mutableListOf("npx")
+        if (autoInstall) {
+            command.add("-y")
+        }
+        command.add(pkg)
+        command.addAll(args)
+        return ProcessBuilder(command).apply {
+            environment().putAll(env)
+        }.start()
+    }
+
+    /**
+     * Launch a process with uvx.
+     */
+    fun uvx(pkg: String, vararg args: String, env: Map<String, String> = emptyMap()): Process {
+        return ProcessBuilder("uvx", pkg, *args).apply {
+            environment().putAll(env)
+        }.start()
+    }
+
+    /**
+     * Launch an arbitrary command after validating it's not a common installation command.
+     */
+    fun safeCommand(vararg args: String, env: Map<String, String> = emptyMap()): Process {
+        val commandList = args.toList()
+        validateSafeCommand(commandList)
+        return ProcessBuilder(commandList).apply {
+            environment().putAll(env)
+        }.start()
+    }
+
+    private fun validateSafeCommand(command: List<String>) {
+        val fullCommand = command.joinToString(" ").lowercase()
+        val installationPatterns = listOf(
+            "npm install", "npm i ", "npm add", "yarn add", "pnpm add",
+            "pip install", "pip3 install", "python -m pip install", "uv pip install", "poetry add",
+            "apt install", "apt-get install", "brew install", "yum install", "dnf install", "apk add", "pkg install"
+        )
+        if (installationPatterns.any { fullCommand.contains(it) }) {
+            throw IllegalArgumentException("Forbidden installation command detected and blocked for safety: $fullCommand")
+        }
+    }
+}
+
+/**
+ * Creates an MCP client that uses Stdio to communicate with the given [process].
+ */
+suspend fun getMcpClientStdio(process: Process): Client {
+    val transport = McpToolRegistryProvider.defaultStdioTransport(process)
+    val client = Client(
+        clientInfo = Implementation(name = DEFAULT_MCP_CLIENT_NAME, version = DEFAULT_MCP_CLIENT_VERSION),
+        options = ClientOptions(
+            ClientCapabilities(), enforceStrictCapabilities = false
+        )
+    )
     client.connect(transport)
     return client
 }
+
+/**
+ * Helper to construct a Stdio transport from an already-started process.
+ */
+fun stdioTransportFromProcess(process: Process): Transport = McpToolRegistryProvider.defaultStdioTransport(process)
+
+/**
+ * Create an MCP client by launching an MCP server via npx and wiring stdio.
+ * autoInstall=false by default to avoid surprise installations; pass true only in controlled environments (e.g., Docker).
+ */
+suspend fun getMcpClientFromNpx(
+    pkg: String,
+    vararg args: String,
+    env: Map<String, String> = emptyMap(),
+    autoInstall: Boolean = false
+): Client = getMcpClientStdio(McpProcessUtils.npx(pkg, *args, env = env, autoInstall = autoInstall))
+
+/**
+ * Create an MCP client by launching an MCP server via uvx and wiring stdio.
+ */
+suspend fun getMcpClientFromUvx(
+    pkg: String,
+    vararg args: String,
+    env: Map<String, String> = emptyMap()
+): Client = getMcpClientStdio(McpProcessUtils.uvx(pkg, *args, env = env))
+
+/**
+ * Construct a Stdio transport from a safe arbitrary command (blocked if it looks like an installer).
+ */
+fun stdioTransportFromSafeCommand(
+    vararg args: String,
+    env: Map<String, String> = emptyMap()
+): Transport = McpToolRegistryProvider.defaultStdioTransport(McpProcessUtils.safeCommand(*args, env = env))
 
 suspend fun AIAgentFunctionalContext.updateSystemResources(client: Client, settings: ResolvedAgentSettings) {
     val newSystemMessage = Message.System(

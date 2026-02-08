@@ -18,7 +18,7 @@ val nativeImageConfigDir = layout.projectDirectory.dir("src/native-image").asFil
 
 dependencies {
     testImplementation(kotlin("test"))
-    val koogVersion = "0.6.0"
+    val koogVersion = "0.6.1"
     api("ai.koog:koog-agents:$koogVersion")
     api("ai.koog:agents-mcp:$koogVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

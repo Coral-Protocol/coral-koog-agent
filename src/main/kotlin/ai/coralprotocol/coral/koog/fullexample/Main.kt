@@ -1,10 +1,7 @@
 package ai.coralprotocol.coral.koog.fullexample
 
-import ai.coralprotocol.coral.koog.fullexample.util.coral.ClaimHandler
-import ai.coralprotocol.coral.koog.fullexample.util.coral.USD_PER_TOKEN
-import ai.coralprotocol.coral.koog.fullexample.util.coral.buildInitialUserMessage
-import ai.coralprotocol.coral.koog.fullexample.util.coral.getMcpClient
-import ai.coralprotocol.coral.koog.fullexample.util.coral.updateSystemResources
+import ai.coralprotocol.coral.koog.fullexample.util.coral.*
+import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.functionalStrategy
 import ai.koog.agents.core.dsl.extension.executeMultipleTools
@@ -14,13 +11,9 @@ import ai.koog.agents.core.dsl.extension.requestLLMOnlyCallingTools
 import ai.koog.agents.core.environment.result
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.mcp.McpToolRegistryProvider
-import ai.koog.prompt.executor.clients.openai.OpenAIClientSettings
-import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
-import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -29,16 +22,12 @@ import kotlin.uuid.ExperimentalUuidApi
 fun main() {
     runBlocking {
         val settings = AgentSettingsLoader.load()
-        val executor: PromptExecutor = SingleLLMPromptExecutor(
-            OpenAILLMClient(
-                apiKey = settings.modelApiKey,
-                settings = OpenAIClientSettings(baseUrl = settings.modelProviderUrl)
-            )
-        )
+        val executor: PromptExecutor =
+            settings.modelProvider.getExecutor(settings.modelProviderUrlOverride, settings.modelApiKey)
         val llmModel = findKoogModelByName(settings.modelId)
 
-        println("Connecting to MCP server at ${settings.serverUrl}")
-        val coralMcpClient = getMcpClient(settings.serverUrl)
+        println("Connecting to MCP server at ${settings.coral.connectionUrl}")
+        val coralMcpClient = getMcpClientStreamableHttp(settings.coral.connectionUrl)
         val coralToolRegistry = McpToolRegistryProvider.fromClient(coralMcpClient)
         val toolRegistry = ToolRegistry {
             tools(coralToolRegistry.tools)
@@ -56,7 +45,7 @@ fun main() {
             toolRegistry = toolRegistry,
             strategy = functionalStrategy { _: Nothing? ->
                 val maxIterations = settings.maxIterations
-                val claimHandler = ClaimHandler(currency = "usd")
+                val claimHandler = ClaimHandler(coralSettings = settings.coral, currency = "usd")
 
                 repeat(maxIterations) { i ->
                     try {

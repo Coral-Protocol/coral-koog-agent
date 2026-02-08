@@ -1,3 +1,4 @@
+edition = 2
 [agent]
 name = "koog-agent"
 version = "0.1.0"
@@ -24,16 +25,26 @@ description = "The prompt to use for follow-up iterations."
 default = "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability."
 display.multiline = true
 
-# Uncomment this option to pass in the API key as an option instead of relying on additional_docker_environment.MODEL_PROVIDER_URL
-#[options.MODEL_PROVIDER_URL]
-#type = "string"
-#description = "The base URL for the LLM provider API (OpenAI compatible)"
-#default = "https://openrouter.ai/api/v1/chat/completions"
+[options.MODEL_PROVIDER]
+type = "string"
+description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC, CORAL_LLM_PROXY)"
+default = "OPENAI"
 
-# Uncomment this option to pass in the API key as an option instead of relying on additional_docker_environment.MODEL_API_KEY
-#MODEL_API_KEY = { type = "string", required = true, description = "The API key for the LLM provider (OpenAI compatible)" }
+[options.MODEL_PROVIDER_URL_OVERRIDE]
+type = "string"
+description = "The base URL for the LLM provider API (OpenAI compatible)"
+default = ""
 
-#MODEL_ID = { type = "string", default = "openai/gpt-5-mini", description = "The model ID to use for the LLM provider" }
+[options.MODEL_API_KEY]
+secret = true
+type = "string"
+required = true
+description = "The API key for the LLM provider (OpenAI compatible)"
+
+[options.MODEL_ID]
+type = "string"
+default = "gpt-5o-mini"
+description = "The model ID to use for the LLM provider"
 
 
 [options.SYSTEM_PROMPT]
