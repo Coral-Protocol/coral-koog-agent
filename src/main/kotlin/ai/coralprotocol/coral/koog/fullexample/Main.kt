@@ -17,6 +17,14 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 
+private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
+    return ToolRegistry {
+        tools(coralToolRegistry.tools)
+        //{CORALIZER:INSIDE_TOOL_REGISTRY_BLOCK}
+        // Add more local tools here as desired
+
+    }
+}
 
 @OptIn(ExperimentalUuidApi::class)
 fun main() {
@@ -29,20 +37,16 @@ fun main() {
         println("Connecting to MCP server at ${settings.coral.connectionUrl}")
         val coralMcpClient = getMcpClientStreamableHttp(settings.coral.connectionUrl)
         val coralToolRegistry = McpToolRegistryProvider.fromClient(coralMcpClient)
-        val toolRegistry = ToolRegistry {
-            tools(coralToolRegistry.tools)
-            //{CORALIZER:INSIDE_TOOL_REGISTRY_BLOCK}
-            // Add more local tools here as desired
-        }
+        val combinedTools = getToolRegistry(coralToolRegistry)
 
-        println("Available tools: ${toolRegistry.tools.joinToString { it.name }}")
+        println("Available tools: ${combinedTools.tools.joinToString { it.name }}")
 
 
         val loopAgent = AIAgent.Companion(
             systemPrompt = "", // This gets replaced later
             promptExecutor = executor,
             llmModel = llmModel,
-            toolRegistry = toolRegistry,
+            toolRegistry = combinedTools,
             strategy = functionalStrategy { _: Nothing? ->
                 val maxIterations = settings.maxIterations
                 val claimHandler = ClaimHandler(coralSettings = settings.coral, currency = "usd")

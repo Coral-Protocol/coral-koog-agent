@@ -4,8 +4,10 @@ name = "koog-agent"
 version = "0.1.0"
 description = "A Koog (Kotlin) example agent for Coral that supports MCP resources and Coral claims."
 
-[options]
-MAX_ITERATIONS = { type = "number", default = 10, description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
+[options.MAX_ITERATIONS]
+type = "u32"
+default = 20
+display.description = "The maximum number of LLM iterations (ignoring tool calls) to run."
 
 [options.EXTRA_SYSTEM_PROMPT]
 type = "string"

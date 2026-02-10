@@ -25,7 +25,7 @@ fun findKoogModelByName(
             .filter { member -> member.returnType.classifier == LLModel::class }
             .mapNotNull { member -> member.call(it) as? LLModel }
     }
-    return allLmModels.first { it.id == id }
+    return allLmModels.firstOrNull { it.id == id } ?: throw IllegalArgumentException("Model with id $id not found in known model definitions. Available models: ${allLmModels.joinToString { it.id }}")
 }
 
 enum class ModelProvider(val getExecutor: (urlOverride: String?, modelApiKey: String) -> PromptExecutor) {
