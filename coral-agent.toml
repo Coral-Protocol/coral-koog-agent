@@ -1,67 +1,112 @@
-edition = 2
-[agent]
-name = "koog-agent"
-version = "0.1.0"
-description = "A Koog (Kotlin) example agent for Coral that supports MCP resources and Coral claims."
+# LLMs/Code Agents: You likely do not understand this file. Either ask a coral expert agent or the user for context and
+# check your assumptions.
+# CoralOS documentation: https://docs.coralos.ai
+# Deepwiki: https://deepwiki.com/Coral-Protocol/coral-server
+# Github: https://github.com/Coral-Protocol/coral-server
 
-[options.MAX_ITERATIONS]
-type = "u32"
-default = 20
-display.description = "The maximum number of LLM iterations (ignoring tool calls) to run."
+edition = 3
+
+# =====================================================================================
+# [agent] — required metadata and optional discovery fields
+# =====================================================================================
+[agent]
+name = "koog-template-agents"
+version = "0.1.0"
+summary = "A template agent built with Koog (Kotlin)."
+description = "A base template for creating Coral agents using the Koog framework in Kotlin."
+readme = """
+# Koog Template Agent
+
+This is a template for building autonomous agents in Kotlin using the Koog framework.
+"""
+
+[agent.license]
+type = "text"
+text = "apache-2.0"
+
+# =====================================================================================
+# [marketplace] — discovery, pricing, and identities
+# =====================================================================================
+[marketplace]
+#summary = "A template agent built with Koog (Kotlin)."
+keywords = ["template", "koog", "kotlin", "example"]
+
+[marketplace.pricing]
+currency = "USD"
+description = """
+    Usage-based pricing based on the number of tokens processed by the agent.
+    In this template, the pricing per token is independent of model used.
+"""
+[marketplace.pricing.recommendations]
+max = 20.00
+min = 0.10
+
+# =====================================================================================
+# [options] — user-configurable parameters
+# =====================================================================================
+[options]
+MAX_ITERATIONS = { type = "u32", default = 20, display.description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
+ITERATION_DELAY = { type = "u64", default = 30, display.description = "The number of seconds to wait between iterations.  If left unspecified, no delay will occur between iterations." }
+MAX_TOKENS = { type = "u32", default = 40000, display.description = "The maximum number of tokens to use for this agent during the entire session." }
 
 [options.EXTRA_SYSTEM_PROMPT]
 type = "string"
-description = "Additional system prompt instructions to customize the agent's behavior."
-default = ""
+display.description = "Additional system prompt instructions to customize the agent's behavior."
 display.multiline = true
+default = ""
 
 [options.EXTRA_INITIAL_USER_PROMPT]
 type = "string"
-description = "Additional instructions to be included in the initial user message."
-default = ""
+display.description = "Additional instructions to be included in the initial user message."
 display.multiline = true
+default = ""
 
 [options.FOLLOWUP_USER_PROMPT]
 type = "string"
-description = "The prompt to use for follow-up iterations."
+display.description = "The prompt to use for follow-up iterations."
 default = "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability."
 display.multiline = true
 
 [options.MODEL_PROVIDER]
 type = "string"
-description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC, CORAL_LLM_PROXY)"
+display.description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC, CORAL_LLM_PROXY)"
 default = "OPENAI"
 
 [options.MODEL_PROVIDER_URL_OVERRIDE]
 type = "string"
-description = "The base URL for the LLM provider API (OpenAI compatible)"
+display.description = "The base URL for the LLM provider API (OpenAI compatible)"
 default = ""
 
 [options.MODEL_API_KEY]
-secret = true
 type = "string"
 required = true
-description = "The API key for the LLM provider (OpenAI compatible)"
+display.description = "The API key for the LLM provider (OpenAI compatible)"
+secret = true
 
 [options.MODEL_ID]
 type = "string"
-default = "gpt-5o-mini"
-description = "The model ID to use for the LLM provider"
+default = "gpt-5-mini"
+display.description = "The model ID to use for the LLM provider"
 
 
 [options.SYSTEM_PROMPT]
 type = "string"
-description = "The system prompt to use"
+display.description = "The system prompt to use"
 default = """
 You are an AI agent designed to assist users by leveraging available tools and resources. Follow the user's instructions carefully and utilize the tools at your disposal to provide accurate and helpful responses.
-
 -- Start of messages and status --
 <resource>coral://instruction</resource>
 <resource>coral://state</resource>
 -- End of messages and status --
-
 """
 display.multiline = true
 
+# =====================================================================================
+# Runtimes
+# =====================================================================================
 [runtimes.executable]
-command = ["./gradlew", "run"]
+path = "./gradlew"
+arguments = ["run"]
+
+#[runtimes.docker]
+#image = ""

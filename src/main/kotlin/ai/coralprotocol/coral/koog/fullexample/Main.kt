@@ -1,10 +1,10 @@
 package ai.coralprotocol.coral.koog.fullexample
 
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
+import ai.coralprotocol.coral.koog.fullexample.util.executeMultipleToolsCatching
 import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.agents.core.dsl.extension.executeMultipleTools
 import ai.koog.agents.core.dsl.extension.extractToolCalls
 import ai.koog.agents.core.dsl.extension.latestTokenUsage
 import ai.koog.agents.core.dsl.extension.requestLLMOnlyCallingTools
@@ -12,6 +12,7 @@ import ai.koog.agents.core.environment.result
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.prompt.executor.model.PromptExecutor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -26,16 +27,32 @@ private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegist
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
+/**
+ * Real main method. This method is meant to be ran via orchestration (by creating a session).
+ * It ignores any local coral-agent.dev.env file.
+ *
+ * To run with the local dev env file, run the main method in DevMain.kt
+ */
 fun main() {
+    val settings: ResolvedAgentSettings = AgentSettingsLoader.load(useDevEnv = false)
+    runAgent(settings)
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun runAgent(settings: ResolvedAgentSettings) {
     runBlocking {
-        val settings = AgentSettingsLoader.load()
         val executor: PromptExecutor =
             settings.modelProvider.getExecutor(settings.modelProviderUrlOverride, settings.modelApiKey)
         val llmModel = findKoogModelByName(settings.modelId)
 
         println("Connecting to MCP server at ${settings.coral.connectionUrl}")
-        val coralMcpClient = getMcpClientStreamableHttp(settings.coral.connectionUrl)
+
+        val coralMcpClient = try {
+            getMcpClientStreamableHttp(settings.coral.connectionUrl)
+        } catch (e: Throwable) {
+            throw processCoralThrowable(e)
+        }
+
         val coralToolRegistry = McpToolRegistryProvider.fromClient(coralMcpClient)
         val combinedTools = getToolRegistry(coralToolRegistry)
 
@@ -50,10 +67,20 @@ fun main() {
             strategy = functionalStrategy { _: Nothing? ->
                 val maxIterations = settings.maxIterations
                 val claimHandler = ClaimHandler(coralSettings = settings.coral, currency = "usd")
+                var totalTokens = 0L
 
                 repeat(maxIterations) { i ->
                     try {
                         if (claimHandler.noBudget()) return@functionalStrategy
+                        if (totalTokens >= settings.maxTokens) {
+                            println("Max tokens reached: $totalTokens >= ${settings.maxTokens}")
+                            return@functionalStrategy
+                        }
+
+                        if (i > 0 && settings.iterationDelayMs > 0) {
+                            println("Waiting ${settings.iterationDelayMs}ms before next iteration...")
+                            delay(settings.iterationDelayMs)
+                        }
 
                         updateSystemResources(coralMcpClient, settings)
                         val response =
@@ -62,7 +89,9 @@ fun main() {
                         println("Iteration $i LLM response: ${response.content}")
                         val toolsToCall = extractToolCalls(listOf(response))
                         println("Extracted tool calls: ${toolsToCall.joinToString { it.tool }}")
-                        val toolResult = executeMultipleTools(toolsToCall)
+
+                        val toolResult = executeMultipleToolsCatching(toolsToCall)
+
                         println("Executed tools, got ${toolResult.size} results: ${Json.encodeToString(toolResult.map { it.toMessage() })}")
                         llm.writeSession {
                             appendPrompt {
@@ -79,6 +108,7 @@ fun main() {
                         }
 
                         val tokens = latestTokenUsage()
+                        totalTokens += tokens
                         if (tokens > 0) {
                             val toClaim = tokens.toDouble() * USD_PER_TOKEN
                             try {
@@ -100,3 +130,19 @@ fun main() {
         loopAgent.run(null)
     }
 }
+
+/**
+ * Uncomment this main method to get a printed environment variable file with exactly the environment variables that are passed
+ * to this agent in the session (and no others).
+ *
+ * The envs will be written to `coral-agent.dev.env`. Note the agent secret is good for only that session, make sure the TTL is set high.
+ *
+ * Then re-comment it for the agent to run normally through coral again.
+ * This is useful for running the agent directly without needing to make a new session during development.
+ * To run with the local dev env file, run the main method in DevMain.kt
+ *
+ * (Kotlin prioritizes the main method with an args parameter)
+ */
+//fun main(args: Array<String>) {
+//    mainPrintDevEnv()
+//}

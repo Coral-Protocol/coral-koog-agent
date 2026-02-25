@@ -35,12 +35,14 @@ data class ResolvedAgentSettings(private val env: EnvironmentOptionProvider) {
         ?: throw IllegalArgumentException("Invalid MODEL_PROVIDER, must be one of ${ModelProvider.entries.joinToString { it.name }}")
     val modelId = env["MODEL_ID"]
 
-    val modelProviderUrlOverride  = env["MODEL_PROVIDER_URL_OVERRIDE"].ifEmpty { null }
+    val modelProviderUrlOverride = env["MODEL_PROVIDER_URL_OVERRIDE"].ifEmpty { null }
     val systemPrompt = env["SYSTEM_PROMPT"]
     val extraSystemPrompt = env["EXTRA_SYSTEM_PROMPT"]
     val extraInitialUserPrompt = env["EXTRA_INITIAL_USER_PROMPT"]
     val followUpUserPrompt = env["FOLLOWUP_USER_PROMPT"]
-    val maxIterations = env["MAX_ITERATIONS"].toDouble().toInt()
+    val maxIterations = env.getOptional("MAX_ITERATIONS")?.toDouble()?.toInt() ?: 20
+    val maxTokens = env.getOptional("MAX_TOKENS")?.toDouble()?.toLong() ?: 20000L
+    val iterationDelayMs = env.getOptional("ITERATION_DELAY")?.toDouble()?.toLong() ?: 0L
 
     val coral = CoralSettings(env)
 }
@@ -52,9 +54,12 @@ interface EnvironmentOptionProvider {
      *  @throws IllegalArgumentException if the option is not found.
      */
     operator fun get(name: String): String
+
+    fun getOptional(name: String): String?
 }
 
-class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionIdNotMatching: Boolean = true) : EnvironmentOptionProvider {
+class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionIdNotMatching: Boolean = true) :
+    EnvironmentOptionProvider {
     private val devEnvFile = "coral-agent.dev.env"
     private val devEnv: Map<String, String> by lazy {
         if (useDevEnv) {
@@ -77,14 +82,23 @@ class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionId
     }
 
     override fun get(name: String): String {
+        return getOptional(name)
+            ?: throw IllegalArgumentException("Environment variable $name is required but not set (and not found in $devEnvFile)")
+    }
+
+    override fun getOptional(name: String): String? {
         val systemValue = System.getenv(name)
         val devValue = devEnv[name]
-        val sessionIdMatches = devEnv["CORAL_SESSION_ID"] == System.getenv("CORAL_SESSION_ID")
+        // TODO: Remove this in light of separate main methods, ensure env file is never loaded when orchestrated
+//        val sessionIdMatches = devEnv["CORAL_SESSION_ID"] == System.getenv("CORAL_SESSION_ID")
+        val processEnvSessionId = System.getenv()["CORAL_SESSION_ID"]
+        val sessionIdMatches =
+            (devEnv["CORAL_SESSION_ID"] == processEnvSessionId) || (processEnvSessionId == null)
         if (ignoreDevEnvIfSessionIdNotMatching && !sessionIdMatches) {
             if (devEnv.containsKey("CORAL_SESSION_ID")) {
                 println("Warning: Ignoring $devEnvFile because CORAL_SESSION_ID does not match the current environment")
             }
-            return systemValue ?: throw IllegalArgumentException("Environment variable $name is required but not set (and $devEnvFile is being ignored due to session ID mismatch)")
+            return systemValue
         }
         return if (systemValue != null) {
             if (devValue != null && systemValue != devValue) {
@@ -93,7 +107,6 @@ class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionId
             systemValue
         } else {
             devValue
-                ?: throw IllegalArgumentException("Environment variable $name is required but not set (and not found in $devEnvFile)")
         }
     }
 }
