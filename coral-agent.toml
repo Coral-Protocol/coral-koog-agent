@@ -28,7 +28,6 @@ text = "apache-2.0"
 # [marketplace] — discovery, pricing, and identities
 # =====================================================================================
 [marketplace]
-#summary = "A template agent built with Koog (Kotlin)."
 keywords = ["template", "koog", "kotlin", "example"]
 
 [marketplace.pricing]
