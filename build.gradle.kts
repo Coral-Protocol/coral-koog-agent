@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    kotlin("jvm") version "2.3.10"
     application
-    kotlin("plugin.serialization") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.10"
     id("org.graalvm.buildtools.native") version "0.10.2"
 }
 
@@ -18,7 +18,7 @@ val nativeImageConfigDir = layout.projectDirectory.dir("src/native-image").asFil
 
 dependencies {
     testImplementation(kotlin("test"))
-    val koogVersion = "0.6.1"
+    val koogVersion = "0.6.4"
     api("ai.koog:koog-agents:$koogVersion")
     api("ai.koog:agents-mcp:$koogVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -73,6 +73,7 @@ graalvmNative {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(24)
 }
