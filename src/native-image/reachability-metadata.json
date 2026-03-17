@@ -2,28 +2,297 @@
   "reflection": [
     {
       "type": "ai.koog.agents.core.tools.annotations.LLMDescription",
+      "type": "ai.koog.prompt.executor.clients.LLModelDefinitions"
+    },
+    {
+      "type": "ai.koog.prompt.executor.clients.anthropic.AnthropicModels",
+      "methods": [
+        {
+          "name": "getHaiku_3",
+          "parameterTypes": []
+        },
+        {
+          "name": "getHaiku_3_5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getHaiku_4_5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getOpus_3",
+          "parameterTypes": []
+        },
+        {
+          "name": "getOpus_4",
+          "parameterTypes": []
+        },
+        {
+          "name": "getOpus_4_1",
+          "parameterTypes": []
+        },
+        {
+          "name": "getOpus_4_5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getSonnet_3_5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getSonnet_3_7",
+          "parameterTypes": []
+        },
+        {
+          "name": "getSonnet_4",
+          "parameterTypes": []
+        },
+        {
+          "name": "getSonnet_4_5",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels"
+    },
+    {
+      "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels$Chat",
       "methods": [
         {
           "name": "description",
+          "name": "getGPT4_1",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4_1Mini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4_1Nano",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4o",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4oMini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Codex",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Mini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Nano",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Pro",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_1",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_1Codex",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_2",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_2Pro",
+          "parameterTypes": []
+        },
+        {
+          "name": "getO1",
+          "parameterTypes": []
+        },
+        {
+          "name": "getO3",
+          "parameterTypes": []
+        },
+        {
+          "name": "getO3Mini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getO4Mini",
           "parameterTypes": []
         }
       ]
     },
     {
       "type": "ai.koog.agents.core.tools.annotations.Tool",
+      "type": "ai.koog.prompt.executor.clients.openrouter.OpenRouterModels",
       "methods": [
         {
           "name": "customName",
+          "name": "getClaude3Haiku",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3Opus",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3Sonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3VisionHaiku",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3VisionOpus",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3VisionSonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3_5Sonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude3_7Sonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude4Sonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude4_1Opus",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude4_5Haiku",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude4_5Opus",
+          "parameterTypes": []
+        },
+        {
+          "name": "getClaude4_5Sonnet",
+          "parameterTypes": []
+        },
+        {
+          "name": "getDeepSeekV30324",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT35Turbo",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4Turbo",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4o",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT4oMini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Chat",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Mini",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5Nano",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_2",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT5_2Pro",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGPT_OSS_120b",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGemini2_5Flash",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGemini2_5FlashLite",
+          "parameterTypes": []
+        },
+        {
+          "name": "getGemini2_5Pro",
+          "parameterTypes": []
+        },
+        {
+          "name": "getLlama3",
+          "parameterTypes": []
+        },
+        {
+          "name": "getLlama3Instruct",
+          "parameterTypes": []
+        },
+        {
+          "name": "getMistral7B",
+          "parameterTypes": []
+        },
+        {
+          "name": "getMixtral8x7B",
+          "parameterTypes": []
+        },
+        {
+          "name": "getPhi4Reasoning",
+          "parameterTypes": []
+        },
+        {
+          "name": "getQwen2_5",
+          "parameterTypes": []
+        },
+        {
+          "name": "getQwen3VL",
           "parameterTypes": []
         }
       ]
     },
     {
       "type": "ai.koog.agents.core.tools.reflect.ToolSet"
+      "type": "ai.koog.prompt.llm.LLMCapability"
     },
     {
       "type": "boolean",
       "allDeclaredFields": true
+      "type": "ai.koog.prompt.llm.LLModel"
     },
     {
       "type": "com.sun.crypto.provider.AESCipher$General",
@@ -336,6 +605,7 @@
           "name": "Companion"
         }
       ]
+      "type": "java.lang.String"
     },
     {
       "type": "java.security.AlgorithmParametersSpi"
@@ -1068,6 +1338,15 @@
     },
     {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "kotlin/collections/collections.kotlin_builtins"
+    },
+    {
+      "glob": "kotlin/kotlin.kotlin_builtins"
+    },
+    {
+      "glob": "kotlin/time/time.kotlin_builtins"
     },
     {
       "glob": "org/apache/hc/client5/version.properties"
