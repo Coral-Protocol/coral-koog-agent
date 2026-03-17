@@ -1,7 +1,15 @@
 {
   "reflection": [
     {
-      "type": "ai.koog.agents.core.tools.annotations.LLMDescription",
+      "type": "ai.koog.agents.core.tools.annotations.LLMDescription"
+    },
+    {
+      "type": "ai.koog.agents.core.tools.annotations.Tool"
+    },
+    {
+      "type": "ai.koog.agents.core.tools.reflect.ToolSet"
+    },
+    {
       "type": "ai.koog.prompt.executor.clients.LLModelDefinitions"
     },
     {
@@ -60,7 +68,6 @@
       "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels$Chat",
       "methods": [
         {
-          "name": "description",
           "name": "getGPT4_1",
           "parameterTypes": []
         },
@@ -135,11 +142,9 @@
       ]
     },
     {
-      "type": "ai.koog.agents.core.tools.annotations.Tool",
       "type": "ai.koog.prompt.executor.clients.openrouter.OpenRouterModels",
       "methods": [
         {
-          "name": "customName",
           "name": "getClaude3Haiku",
           "parameterTypes": []
         },
@@ -286,13 +291,14 @@
       ]
     },
     {
-      "type": "ai.koog.agents.core.tools.reflect.ToolSet"
       "type": "ai.koog.prompt.llm.LLMCapability"
+    },
+    {
+      "type": "ai.koog.prompt.llm.LLModel"
     },
     {
       "type": "boolean",
       "allDeclaredFields": true
-      "type": "ai.koog.prompt.llm.LLModel"
     },
     {
       "type": "com.sun.crypto.provider.AESCipher$General",
@@ -584,7 +590,19 @@
       ]
     },
     {
+      "type": "java.io.Serializable"
+    },
+    {
       "type": "java.lang.Boolean"
+    },
+    {
+      "type": "java.lang.Class",
+      "methods": [
+        {
+          "name": "isSealed",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "java.lang.ClassValue"
@@ -605,7 +623,6 @@
           "name": "Companion"
         }
       ]
-      "type": "java.lang.String"
     },
     {
       "type": "java.security.AlgorithmParametersSpi"
@@ -641,6 +658,9 @@
     },
     {
       "type": "kotlin.Boolean"
+    },
+    {
+      "type": "kotlin.Cloneable"
     },
     {
       "type": "kotlin.Double"
@@ -709,6 +729,9 @@
       "type": "kotlin.collections.Map"
     },
     {
+      "type": "kotlin.collections.MutableList"
+    },
+    {
       "type": "kotlin.collections.MutableMap"
     },
     {
@@ -725,6 +748,9 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "kotlin.reflect.jvm.internal.impl.km.jvm.internal.JvmMetadataExtensions"
     },
     {
       "type": "kotlin.reflect.jvm.internal.impl.load.java.ErasedOverridabilityCondition"
@@ -1329,6 +1355,9 @@
     },
     {
       "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
+    },
+    {
+      "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.km.internal.extensions.MetadataExtensions"
     },
     {
       "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition"
