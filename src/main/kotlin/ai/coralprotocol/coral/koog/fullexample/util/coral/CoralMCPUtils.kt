@@ -21,8 +21,7 @@ import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import io.modelcontextprotocol.kotlin.sdk.client.StreamableHttpClientTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
 import io.modelcontextprotocol.kotlin.sdk.types.ClientCapabilities
-import kotlinx.datetime.Clock
-import java.io.File
+import kotlin.time.Clock.System
 import kotlin.time.Duration.Companion.seconds
 
 const val USD_PER_TOKEN = 0.000001
@@ -212,7 +211,7 @@ fun stdioTransportFromSafeCommand(
 suspend fun AIAgentFunctionalContext.updateSystemResources(client: Client, settings: ResolvedAgentSettings) {
     val newSystemMessage = Message.System(
         injectedWithMcpResources(client, buildSystemPrompt(settings)),
-        RequestMetaInfo(Clock.System.now())
+        RequestMetaInfo(System.now())
     )
     return llm.writeSession {
         rewritePrompt { prompt ->
