@@ -82,3 +82,8 @@ kotlin {
 tasks.named<JavaExec>("run") {
     outputs.upToDateWhen { false }
 }
+
+tasks.register<HydrateTemplateTask>("hydrate") {
+    group = "setup"
+    description = "Hydrate this template into a concrete Coral Koog agent project."
+}
