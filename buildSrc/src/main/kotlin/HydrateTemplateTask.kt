@@ -161,6 +161,35 @@ abstract class HydrateTemplateTask : DefaultTask() {
         // 8. Remove git remote origin (template was likely cloned)
         removeGitRemoteOrigin(rootDir)
 
+        // 9. Self-destruct: remove hydrator code
+        logger.lifecycle("→ Removing hydrator code")
+        gitRemove(rootDir, "buildSrc")
+        gitRemove(rootDir, "package.json")
+        gitRemove(rootDir, "create-koog.js")
+        updateFile(rootDir.resolve("build.gradle.kts")) { content ->
+            val lines = content.lines()
+            val newLines = mutableListOf<String>()
+            var inHydrateBlock = false
+            for (line in lines) {
+                if (line.contains("tasks.register<HydrateTemplateTask>(\"hydrate\")")) {
+                    inHydrateBlock = true
+                    continue
+                }
+                if (inHydrateBlock) {
+                    if (line.trim() == "}") {
+                        inHydrateBlock = false
+                    }
+                    continue
+                }
+                newLines.add(line)
+            }
+            newLines.joinToString("\n").trimEnd() + "\n"
+        }
+
+        // 10. Commit changes
+        logger.lifecycle("→ Committing hydrated state")
+        gitCommit(rootDir, agentName)
+
         logger.lifecycle("")
         logger.lifecycle("✅ Template hydrated successfully!")
         logger.lifecycle("   Agent name:   $agentName")
@@ -315,12 +344,11 @@ abstract class HydrateTemplateTask : DefaultTask() {
      * Clean up empty parent directories left behind after git mv, walking up to (but not including) stopAt.
      */
     private fun gitCleanEmptyDirs(rootDir: File, stopAt: File, start: File) {
-        var dir = start
-        while (dir != stopAt && dir.startsWith(stopAt)) {
+        var dir = if (start.exists()) start else start.parentFile
+        while (dir != null && dir != stopAt && dir.startsWith(stopAt)) {
             val contents = dir.listFiles()
-            if (contents.isNullOrEmpty() && dir.exists()) {
+            if (dir.exists() && (contents == null || contents.isEmpty())) {
                 val relDir = dir.relativeTo(rootDir).path
-                // Use git to remove tracked empty dirs, or plain rmdir for untracked
                 dir.delete()
                 logger.lifecycle("  ✓ Removed empty directory: $relDir")
                 dir = dir.parentFile
@@ -336,13 +364,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
      */
     private fun gitCleanDirectory(rootDir: File, relPath: String) {
         try {
-            // Remove any tracked files in the directory
-            val rmProcess = ProcessBuilder("git", "rm", "-rf", "--ignore-unmatch", relPath)
-                .directory(rootDir)
-                .redirectErrorStream(true)
-                .start()
-            rmProcess.inputStream.bufferedReader().readText()
-            rmProcess.waitFor()
+            gitRemove(rootDir, relPath)
 
             // Remove any untracked/ignored files in the directory
             val cleanProcess = ProcessBuilder("git", "clean", "-fdx", "--", relPath)
@@ -362,6 +384,49 @@ abstract class HydrateTemplateTask : DefaultTask() {
         } catch (e: Exception) {
             logger.warn("  ⚠ git clean failed, falling back to deleteRecursively: ${e.message}")
             rootDir.resolve(relPath).deleteRecursively()
+        }
+    }
+
+    private fun gitRemove(rootDir: File, relPath: String) {
+        try {
+            val process = ProcessBuilder("git", "rm", "-rf", "--ignore-unmatch", relPath)
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+            process.inputStream.bufferedReader().readText()
+            process.waitFor()
+        } catch (e: Exception) {
+            logger.warn("  ⚠ git rm failed: ${e.message}")
+        }
+    }
+
+    private fun gitCommit(rootDir: File, agentName: String) {
+        try {
+            // Stage everything
+            ProcessBuilder("git", "add", ".").directory(rootDir).start().waitFor()
+
+            // Commit with CoralOS identity
+            val commitProcess = ProcessBuilder(
+                "git",
+                "-c", "user.name=CoralOS",
+                "-c", "user.email=kooghydrator@coralos.ai",
+                "commit",
+                "-m", "Hydrate template: $agentName"
+            )
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+            
+            val output = commitProcess.inputStream.bufferedReader().readText().trim()
+            val exitCode = commitProcess.waitFor()
+            
+            if (exitCode == 0) {
+                logger.lifecycle("  ✓ Created hydration commit as CoralOS")
+            } else {
+                logger.warn("  ⚠ Git commit failed: $output")
+            }
+        } catch (e: Exception) {
+            logger.warn("  ⚠ Could not perform git commit: ${e.message}")
         }
     }
 }
