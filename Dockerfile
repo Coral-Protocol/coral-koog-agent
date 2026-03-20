@@ -3,8 +3,9 @@ WORKDIR /workspace
 
 COPY gradlew ./gradlew
 COPY gradle ./gradle
-COPY build.gradle.kts settings.gradle.kts ./
+COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 RUN chmod +x ./gradlew
+COPY buildSrc ./buildSrc
 COPY src ./src
 COPY coral-agent.toml ./coral-agent.toml
 

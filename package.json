@@ -1,0 +1,22 @@
+{
+  "name": "create-koog",
+  "version": "1.0.1",
+  "description": "Initialize a new Coral Koog agent project",
+  "bin": {
+    "create-koog": "create-koog.js"
+  },
+  "files": [
+    "create-koog.js"
+  ],
+  "scripts": {
+    "hydrate": "./gradlew hydrate"
+  },
+  "keywords": [
+    "coral",
+    "koog",
+    "agent",
+    "template"
+  ],
+  "author": "CoralOS",
+  "license": "Apache-2.0"
+}
