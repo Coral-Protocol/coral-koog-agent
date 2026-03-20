@@ -166,6 +166,12 @@ abstract class HydrateTemplateTask : DefaultTask() {
         gitRemove(rootDir, "buildSrc")
         gitRemove(rootDir, "package.json")
         gitRemove(rootDir, "create-koog.js")
+        updateFile(rootDir.resolve("Dockerfile")) { content ->
+            content.lines()
+                .filter { !it.contains("COPY buildSrc ./buildSrc") }
+                .joinToString("\n")
+                .trimEnd() + "\n"
+        }
         updateFile(rootDir.resolve("build.gradle.kts")) { content ->
             val lines = content.lines()
             val newLines = mutableListOf<String>()
