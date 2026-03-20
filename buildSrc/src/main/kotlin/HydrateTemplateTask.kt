@@ -51,14 +51,14 @@ abstract class HydrateTemplateTask : DefaultTask() {
 
         validate(agentName, packageName)
 
-        logger.lifecycle("")
-        logger.lifecycle("╔══════════════════════════════════════════════════╗")
-        logger.lifecycle("║          Hydrating Coral Koog Agent Template     ║")
-        logger.lifecycle("╠══════════════════════════════════════════════════╣")
-        logger.lifecycle("║  Agent name:   ${agentName.padEnd(33)}║")
-        logger.lifecycle("║  Package name: ${packageName.padEnd(33)}║")
-        logger.lifecycle("╚══════════════════════════════════════════════════╝")
-        logger.lifecycle("")
+        logger.quiet("")
+        logger.quiet("╔══════════════════════════════════════════════════╗")
+        logger.quiet("║          Hydrating Coral Koog Agent Template     ║")
+        logger.quiet("╠══════════════════════════════════════════════════╣")
+        logger.quiet("║  Agent name:   ${agentName.padEnd(33)}║")
+        logger.quiet("║  Package name: ${packageName.padEnd(33)}║")
+        logger.quiet("╚══════════════════════════════════════════════════╝")
+        logger.quiet("")
 
         // Derive values from inputs
         val group = packageName.split(".").take(
@@ -70,7 +70,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         val newPackagePath = packageName.replace('.', '/')
 
         // 1. Update build.gradle.kts
-        logger.lifecycle("→ Updating build.gradle.kts")
+        logger.quiet("→ Updating build.gradle.kts")
         updateFile(rootDir.resolve("build.gradle.kts")) { content ->
             content
                 .replaceLineContaining("{CORALIZER:BUILD_GROUP}") {
@@ -88,7 +88,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
 
         // 2. Update settings.gradle.kts
-        logger.lifecycle("→ Updating settings.gradle.kts")
+        logger.quiet("→ Updating settings.gradle.kts")
         updateFile(rootDir.resolve("settings.gradle.kts")) { content ->
             content.replaceLineContaining("{CORALIZER:ROOT_PROJECT_NAME}") {
                 "rootProject.name = \"$agentName\" //{CORALIZER:ROOT_PROJECT_NAME}"
@@ -96,7 +96,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
 
         // 3. Update coral-agent.toml
-        logger.lifecycle("→ Updating coral-agent.toml")
+        logger.quiet("→ Updating coral-agent.toml")
         updateFile(rootDir.resolve("coral-agent.toml")) { content ->
             content
                 .replace("name = \"$TEMPLATE_AGENT_NAME\"", "name = \"$agentName\"")
@@ -120,13 +120,13 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
 
         // 4. Update README.md
-        logger.lifecycle("→ Updating README.md")
+        logger.quiet("→ Updating README.md")
         updateFile(rootDir.resolve("README.md")) { content ->
             content.replace("# Koog Coral Agent (Kotlin)", "# $agentName")
         }
 
         // 5. Rename package in all Kotlin source files
-        logger.lifecycle("→ Renaming package in source files: $TEMPLATE_PACKAGE → $packageName")
+        logger.quiet("→ Renaming package in source files: $TEMPLATE_PACKAGE → $packageName")
         val srcRoot = rootDir.resolve("src/main/kotlin")
         val oldPackageDir = srcRoot.resolve(templatePackagePath)
 
@@ -144,7 +144,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         // 6. Move source files to new package directory using git mv
         val newPackageDir = srcRoot.resolve(newPackagePath)
         if (oldPackageDir.absolutePath != newPackageDir.absolutePath) {
-            logger.lifecycle("→ Moving sources via git: $templatePackagePath → $newPackagePath")
+            logger.quiet("→ Moving sources via git: $templatePackagePath → $newPackagePath")
             newPackageDir.parentFile.mkdirs()
             gitMove(rootDir, oldPackageDir, newPackageDir)
             // Clean up empty parent directories left behind by git mv
@@ -154,7 +154,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         // 7. Clean up compiled output from old package
         val outDir = rootDir.resolve("out")
         if (outDir.exists()) {
-            logger.lifecycle("→ Cleaning old compiled output in out/")
+            logger.quiet("→ Cleaning old compiled output in out/")
             gitCleanDirectory(rootDir, "out")
         }
 
@@ -162,7 +162,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         removeGitRemoteOrigin(rootDir)
 
         // 9. Self-destruct: remove hydrator code
-        logger.lifecycle("→ Removing hydrator code")
+        logger.quiet("→ Removing hydrator code")
         gitRemove(rootDir, "buildSrc")
         gitRemove(rootDir, "package.json")
         gitRemove(rootDir, "create-koog.js")
@@ -187,21 +187,21 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
 
         // 10. Commit changes
-        logger.lifecycle("→ Committing hydrated state")
+        logger.quiet("→ Committing hydrated state")
         gitCommit(rootDir, agentName)
 
-        logger.lifecycle("")
-        logger.lifecycle("✅ Template hydrated successfully!")
-        logger.lifecycle("   Agent name:   $agentName")
-        logger.lifecycle("   Package:      $packageName")
-        logger.lifecycle("   Main class:   $mainClassFqn")
-        logger.lifecycle("")
-        logger.lifecycle("Next steps:")
-        logger.lifecycle("  1. Review the changes")
-        logger.lifecycle("  2. Set a new git remote:  git remote add origin <your-repo-url>")
-        logger.lifecycle("  3. Run: ./gradlew build")
-        logger.lifecycle("  4. Run: ./gradlew run")
-        logger.lifecycle("")
+        logger.quiet("")
+        logger.quiet("✅ Template hydrated successfully!")
+        logger.quiet("   Agent name:   $agentName")
+        logger.quiet("   Package:      $packageName")
+        logger.quiet("   Main class:   $mainClassFqn")
+        logger.quiet("")
+        logger.quiet("Next steps:")
+        logger.quiet("  1. Review the changes")
+        logger.quiet("  2. Set a new git remote:  git remote add origin <your-repo-url>")
+        logger.quiet("  3. Run: ./gradlew build")
+        logger.quiet("  4. Run: ./gradlew run")
+        logger.quiet("")
     }
 
     private fun resolveParam(name: String, cliValue: String, prompt: String): String {
@@ -262,7 +262,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         val updated = transform(original)
         if (original != updated) {
             file.writeText(updated)
-            logger.lifecycle("  ✓ Updated: ${file.relativeTo(project.rootDir)}")
+            logger.quiet("  ✓ Updated: ${file.relativeTo(project.rootDir)}")
         }
     }
 
@@ -281,7 +281,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
     private fun removeGitRemoteOrigin(rootDir: File) {
         val gitDir = rootDir.resolve(".git")
         if (!gitDir.exists()) {
-            logger.lifecycle("→ No .git directory found, skipping remote removal")
+            logger.quiet("→ No .git directory found, skipping remote removal")
             return
         }
 
@@ -294,9 +294,9 @@ abstract class HydrateTemplateTask : DefaultTask() {
             val exitCode = process.waitFor()
 
             if (exitCode == 0) {
-                logger.lifecycle("→ Removed git remote 'origin' (template repository link)")
+                logger.quiet("→ Removed git remote 'origin' (template repository link)")
             } else if (output.contains("No such remote") || output.contains("could not remove")) {
-                logger.lifecycle("→ No git remote 'origin' found, nothing to remove")
+                logger.quiet("→ No git remote 'origin' found, nothing to remove")
             } else {
                 logger.warn("  ⚠ Failed to remove git remote 'origin': $output")
             }
@@ -319,7 +319,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
             val output = process.inputStream.bufferedReader().readText().trim()
             val exitCode = process.waitFor()
             if (exitCode == 0) {
-                logger.lifecycle("  ✓ git mv $relSource → $relTarget")
+                logger.quiet("  ✓ git mv $relSource → $relTarget")
             } else {
                 throw RuntimeException("git mv failed (exit $exitCode): $output")
             }
@@ -350,7 +350,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
             if (dir.exists() && (contents == null || contents.isEmpty())) {
                 val relDir = dir.relativeTo(rootDir).path
                 dir.delete()
-                logger.lifecycle("  ✓ Removed empty directory: $relDir")
+                logger.quiet("  ✓ Removed empty directory: $relDir")
                 dir = dir.parentFile
             } else {
                 break
@@ -380,7 +380,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
                 dir.delete()
             }
 
-            logger.lifecycle("  ✓ Cleaned $relPath via git")
+            logger.quiet("  ✓ Cleaned $relPath via git")
         } catch (e: Exception) {
             logger.warn("  ⚠ git clean failed, falling back to deleteRecursively: ${e.message}")
             rootDir.resolve(relPath).deleteRecursively()
@@ -421,7 +421,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
             val exitCode = commitProcess.waitFor()
             
             if (exitCode == 0) {
-                logger.lifecycle("  ✓ Created hydration commit as CoralOS")
+                logger.quiet("  ✓ Created hydration commit as CoralOS")
             } else {
                 logger.warn("  ⚠ Git commit failed: $output")
             }

@@ -7,9 +7,13 @@ This is a template for building autonomous agents in Kotlin using the Koog frame
 You can transform this template into your own project using either NPM (recommended) or Gradle:
 
 ### Option 1: Using NPM (Recommended)
-Run the following to create a new project in a directory of your choice:
+Run the following to create a new project. You will be prompted for a name if you don't provide one:
 ```bash
 npm create koog <my-cool-agent>
+```
+or just:
+```bash
+npm create koog
 ```
 
 ### Option 2: Using Gradle

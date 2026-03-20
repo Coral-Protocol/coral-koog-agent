@@ -48,3 +48,4 @@ bin/
 agent_log.json
 .idea
 coral-agent.dev.env
+.npmrc
