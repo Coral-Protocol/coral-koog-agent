@@ -5,6 +5,11 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.2"
 }
 
+// Ensure ./gradlew hydrate is not interrupted by gradle execution updates (progress bars)
+if (gradle.startParameter.taskNames.any { it.contains("hydrate") }) {
+    gradle.startParameter.consoleOutput = org.gradle.api.logging.configuration.ConsoleOutput.Plain
+}
+
 group = "ai.coralprotocol" //{CORALIZER:BUILD_GROUP}
 version = "1.0-SNAPSHOT" //{CORALIZER:BUILD_VERSION}
 

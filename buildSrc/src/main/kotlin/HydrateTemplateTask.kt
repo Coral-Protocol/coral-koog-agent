@@ -177,6 +177,11 @@ abstract class HydrateTemplateTask : DefaultTask() {
             val newLines = mutableListOf<String>()
             var inHydrateBlock = false
             for (line in lines) {
+                // Remove console fix block
+                if (line.contains("Ensure ./gradlew hydrate is not interrupted by gradle execution updates")) {
+                    inHydrateBlock = true
+                    continue
+                }
                 if (line.contains("tasks.register<HydrateTemplateTask>(\"hydrate\")")) {
                     inHydrateBlock = true
                     continue
