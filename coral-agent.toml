@@ -7,7 +7,7 @@
 # For instructions on coral options see here: https://docs.coralos.ai/reference/agent/tables/options
 # For instructions on the marketplace see here: https://docs.coralos.ai/concepts/marketplace
 # =====================================================================================
-edition = 3
+edition = 4
 
 # =====================================================================================
 # [agent] — required metadata and optional discovery fields
