@@ -206,7 +206,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
             var inHydrateBlock = false
 
             for (line in content.lines()) {
-                if (line.contains("Ensure ./gradlew hydrate is not interrupted by gradle execution updates")) {
+                if (line.contains("Ensure ./gradlew -q hydrate is not interrupted by gradle execution updates")) {
                     inHydrateBlock = true
                     continue
                 }
@@ -237,8 +237,8 @@ abstract class HydrateTemplateTask : DefaultTask() {
         logger.quiet("Next steps:")
         logger.quiet("1. Review the changes")
         logger.quiet("2. Set a new git remote: git remote add origin <your-repo-url>")
-        logger.quiet("3. Run: ./gradlew build")
-        logger.quiet("4. Run: ./gradlew run")
+        logger.quiet("3. Run: ./gradlew -q build")
+        logger.quiet("4. Run: ./gradlew -q run")
         logger.quiet("")
     }
 

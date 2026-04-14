@@ -82,12 +82,12 @@ async function main() {
     }
 
     // Use --console=plain and -q to keep the output clean during interactive hydration
-    run(`${gradlew} hydrate --console=plain -q ${autoArgs} ${hydrateArgs}`);
+    run(`${gradlew} -q hydrate --console=plain ${autoArgs} ${hydrateArgs}`);
 
     console.log('\n✅ Project created and hydrated successfully!');
     console.log(`\nNext steps:
   cd ${targetDir}
-  ./gradlew run
+  ./gradlew -q run
 `);
 }
 

@@ -19,7 +19,7 @@ npm create koog
 ### Option 2: Using Gradle
 If you have already cloned the repository, run the hydration task directly:
 ```bash
-./gradlew hydrate
+./gradlew -q hydrate
 ```
 
 The tool will prompt you for:
@@ -28,7 +28,7 @@ The tool will prompt you for:
 
 Alternatively, you can provide these as arguments:
 ```bash
-./gradlew hydrate --agentName=my-cool-agent --packageName=com.example.myagent
+./gradlew -q hydrate --agentName=my-cool-agent --packageName=com.example.myagent
 ```
 
 ### What hydration does:
@@ -47,5 +47,5 @@ Alternatively, you can provide these as arguments:
 ## Running the Agent
 Once hydrated, you can run the agent with:
 ```bash
-./gradlew run
+./gradlew -q run
 ```

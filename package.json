@@ -9,7 +9,7 @@
     "create-koog.js"
   ],
   "scripts": {
-    "hydrate": "./gradlew hydrate"
+    "hydrate": "./gradlew -q hydrate"
   },
   "keywords": [
     "coral",
