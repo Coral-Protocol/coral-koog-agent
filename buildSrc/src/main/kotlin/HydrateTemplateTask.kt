@@ -15,6 +15,8 @@ import java.io.File
  *
  * Or via Gradle properties:
  *   ./gradlew hydrate -PagentName=my-cool-agent -PpackageName=com.example.myagent
+ *
+ *   (this was entirely LLM coded, don't hesitate to delete)
  */
 abstract class HydrateTemplateTask : DefaultTask() {
 
@@ -121,8 +123,40 @@ abstract class HydrateTemplateTask : DefaultTask() {
 
         // 4. Update README.md
         logger.quiet("→ Updating README.md")
+        val prependixFile = rootDir.resolve("post-hydrate-readme-prependix.md")
+        val prependixContent = if (prependixFile.exists()) {
+            prependixFile.readText().replace("# <agent name>", "# $agentName")
+        } else null
+
         updateFile(rootDir.resolve("README.md")) { content ->
-            content.replace("# Koog Coral Agent (Kotlin)", "# $agentName")
+            var newContent = content.replace("# Koog Coral Agent (Kotlin)", "# $agentName")
+            if (prependixContent != null) {
+                // If we have a prependix, it already has the header.
+                // We also remove the template intro and hydration sections because they are no longer relevant.
+                // We keep the Requirements section if it exists.
+                val requirementsIdx = newContent.indexOf("## Requirements")
+                val nextSectionIdx = newContent.indexOf("## ", requirementsIdx + 3)
+
+                val requirementsSection = if (requirementsIdx != -1) {
+                    if (nextSectionIdx != -1) {
+                        newContent.substring(requirementsIdx, nextSectionIdx).trim()
+                    } else {
+                        newContent.substring(requirementsIdx).trim()
+                    }
+                } else ""
+
+                newContent = prependixContent + "\n" + requirementsSection
+            }
+            newContent.trimEnd() + "\n"
+        }
+
+        if (prependixFile.exists()) {
+            logger.quiet("→ Removing $prependixFile")
+            gitRemove(rootDir, "post-hydrate-readme-prependix.md")
+            // Ensure it's gone even if git rm didn't remove it (e.g. untracked)
+            if (prependixFile.exists()) {
+                prependixFile.delete()
+            }
         }
 
         // 5. Rename package in all Kotlin source files

@@ -4,6 +4,9 @@
 # Deepwiki: https://deepwiki.com/Coral-Protocol/coral-server
 # Github: https://github.com/Coral-Protocol/coral-server
 
+# For instructions on coral options see here: https://docs.coralos.ai/reference/agent/tables/options
+# For instructions on the marketplace see here: https://docs.coralos.ai/concepts/marketplace
+# =====================================================================================
 edition = 3
 
 # =====================================================================================
@@ -44,9 +47,9 @@ min = 0.10
 # [options] — user-configurable parameters
 # =====================================================================================
 [options]
-MAX_ITERATIONS = { type = "u32", default = 20, display.description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
-ITERATION_DELAY = { type = "u64", default = 30, display.description = "The number of seconds to wait between iterations.  If left unspecified, no delay will occur between iterations." }
-MAX_TOKENS = { type = "u32", default = 40000, display.description = "The maximum number of tokens to use for this agent during the entire session." }
+MAX_ITERATIONS = { type = "u32", default = 60, display.description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
+ITERATION_DELAY_MS = { type = "u64", default = 0, display.description = "The number of milliseconds to wait between iterations. If left unspecified, no delay will occur between iterations." }
+MAX_TOKENS = { type = "u32", default = 150000, display.description = "The maximum number of tokens to use for this agent during the entire session." }
 
 [options.EXTRA_SYSTEM_PROMPT]
 type = "string"
@@ -68,7 +71,7 @@ display.multiline = true
 
 [options.MODEL_PROVIDER]
 type = "string"
-display.description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC, CORAL_LLM_PROXY)"
+display.description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC)"
 default = "OPENAI"
 
 [options.MODEL_PROVIDER_URL_OVERRIDE]
@@ -86,7 +89,6 @@ secret = true
 type = "string"
 default = "gpt-5-mini"
 display.description = "The model ID to use for the LLM provider"
-
 
 [options.SYSTEM_PROMPT]
 type = "string"

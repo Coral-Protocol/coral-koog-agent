@@ -40,9 +40,9 @@ data class ResolvedAgentSettings(private val env: EnvironmentOptionProvider) {
     val extraSystemPrompt = env["EXTRA_SYSTEM_PROMPT"]
     val extraInitialUserPrompt = env["EXTRA_INITIAL_USER_PROMPT"]
     val followUpUserPrompt = env["FOLLOWUP_USER_PROMPT"]
-    val maxIterations = env.getOptional("MAX_ITERATIONS")?.toDouble()?.toInt() ?: 20
-    val maxTokens = env.getOptional("MAX_TOKENS")?.toDouble()?.toLong() ?: 20000L
-    val iterationDelayMs = env.getOptional("ITERATION_DELAY")?.toDouble()?.toLong() ?: 0L
+    val maxIterations = env.getOptional("MAX_ITERATIONS")?.toInt() ?: 20
+    val maxTokens = env.getOptional("MAX_TOKENS")?.toLong() ?: 20000L
+    val iterationDelayMs = env.getOptional("ITERATION_DELAY_MS")?.toLong() ?: 0L
 
     val coral = CoralSettings(env)
 }
@@ -58,7 +58,7 @@ interface EnvironmentOptionProvider {
     fun getOptional(name: String): String?
 }
 
-class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionIdNotMatching: Boolean = true) :
+class CoralOptionProvider(useDevEnv: Boolean = true) :
     EnvironmentOptionProvider {
     private val devEnvFile = "coral-agent.dev.env"
     private val devEnv: Map<String, String> by lazy {
@@ -89,17 +89,6 @@ class CoralOptionProvider(useDevEnv: Boolean = true, val ignoreDevEnvIfSessionId
     override fun getOptional(name: String): String? {
         val systemValue = System.getenv(name)
         val devValue = devEnv[name]
-        // TODO: Remove this in light of separate main methods, ensure env file is never loaded when orchestrated
-//        val sessionIdMatches = devEnv["CORAL_SESSION_ID"] == System.getenv("CORAL_SESSION_ID")
-        val processEnvSessionId = System.getenv()["CORAL_SESSION_ID"]
-        val sessionIdMatches =
-            (devEnv["CORAL_SESSION_ID"] == processEnvSessionId) || (processEnvSessionId == null)
-        if (ignoreDevEnvIfSessionIdNotMatching && !sessionIdMatches) {
-            if (devEnv.containsKey("CORAL_SESSION_ID")) {
-                println("Warning: Ignoring $devEnvFile because CORAL_SESSION_ID does not match the current environment")
-            }
-            return systemValue
-        }
         return if (systemValue != null) {
             if (devValue != null && systemValue != devValue) {
                 println("Warning: Environment variable $name is overriding the value in $devEnvFile")
