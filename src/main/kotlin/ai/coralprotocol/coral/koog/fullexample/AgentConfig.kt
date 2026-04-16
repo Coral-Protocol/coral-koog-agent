@@ -1,7 +1,7 @@
 package ai.coralprotocol.coral.koog.fullexample
 
-import ai.coralprotocol.coral.koog.fullexample.util.ModelProvider
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Minimal config loader that reads values from environment variables or a dev env file.
@@ -25,24 +25,23 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val runtimeId = env["CORAL_RUNTIME_ID"]
     val sessionId = env["CORAL_SESSION_ID"]
     val sendClaims = env["CORAL_SEND_CLAIMS"].toDouble().toInt()
+
+    // note: we're masking some unused coral envs here. Feel free to change if multiple models are used.
+    val modelChoice = env.get("MODEL_CHOICE")
+    val modelProxyUrl = env.get("CORAL_PROXY_URL_$modelChoice")
+    val modelProxyModel = env.get("CORAL_PROXY_MODEL_$modelChoice")
+    val modelProxyFormat = env.get("CORAL_PROXY_FORMAT_$modelChoice")
+    val modelProxyProvider = env.get("CORAL_PROXY_PROVIDER_$modelChoice")
 }
 
 data class ResolvedAgentSettings(private val env: EnvironmentOptionProvider) {
-    val modelApiKey = env["MODEL_API_KEY"]
-    val modelProvider = ModelProvider.entries.find {
-        it.name.equals(env["MODEL_PROVIDER"], ignoreCase = true)
-    }
-        ?: throw IllegalArgumentException("Invalid MODEL_PROVIDER, must be one of ${ModelProvider.entries.joinToString { it.name }}")
-    val modelId = env["MODEL_ID"]
-
-    val modelProviderUrlOverride = env["MODEL_PROVIDER_URL_OVERRIDE"].ifEmpty { null }
     val systemPrompt = env["SYSTEM_PROMPT"]
     val extraSystemPrompt = env["EXTRA_SYSTEM_PROMPT"]
     val extraInitialUserPrompt = env["EXTRA_INITIAL_USER_PROMPT"]
     val followUpUserPrompt = env["FOLLOWUP_USER_PROMPT"]
-    val maxIterations = env.getOptional("MAX_ITERATIONS")?.toInt() ?: 20
-    val maxTokens = env.getOptional("MAX_TOKENS")?.toLong() ?: 20000L
-    val iterationDelayMs = env.getOptional("ITERATION_DELAY_MS")?.toLong() ?: 0L
+    val maxIterations = env.get("MAX_ITERATIONS").toInt()
+    val maxTokens = env.get("MAX_TOKENS").toInt()
+    val iterationDelayMs = env.get("ITERATION_DELAY_MS").toInt().milliseconds
 
     val coral = CoralSettings(env)
 }

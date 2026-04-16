@@ -1,13 +1,11 @@
 package ai.coralprotocol.coral.koog.fullexample
 
+import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
+import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
 import ai.coralprotocol.coral.koog.fullexample.util.executeMultipleToolsCatching
-import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.agents.core.dsl.extension.extractToolCalls
-import ai.koog.agents.core.dsl.extension.latestTokenUsage
-import ai.koog.agents.core.dsl.extension.requestLLMOnlyCallingTools
 import ai.koog.agents.core.environment.result
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.mcp.McpToolRegistryProvider
@@ -16,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 
 private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
@@ -42,8 +41,12 @@ fun main() {
 fun runAgent(settings: ResolvedAgentSettings) {
     runBlocking {
         val executor: PromptExecutor =
-            settings.modelProvider.getExecutor(settings.modelProviderUrlOverride, settings.modelApiKey)
-        val llmModel = findKoogModelByName(settings.modelId)
+            getPromptExecutor(
+                settings.coral.modelProxyFormat,
+                settings.coral.modelProxyUrl)
+
+        val llmModel =
+            findKoogModelByInfo(settings.coral.modelProxyModel, settings.coral.modelProxyProvider, settings.coral.modelProxyFormat)
 
         println("Connecting to MCP server at ${settings.coral.connectionUrl}")
 
@@ -60,7 +63,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
 
 
         val loopAgent = AIAgent.Companion(
-            systemPrompt = "", // This gets replaced later
+            systemPrompt = "", // This gets replaced later by updateSystemResources
             promptExecutor = executor,
             llmModel = llmModel,
             toolRegistry = combinedTools,
@@ -77,7 +80,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
                             return@functionalStrategy
                         }
 
-                        if (i > 0 && settings.iterationDelayMs > 0) {
+                        if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
                             println("Waiting ${settings.iterationDelayMs}ms before next iteration...")
                             delay(settings.iterationDelayMs)
                         }

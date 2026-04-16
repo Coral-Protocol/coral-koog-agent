@@ -13,7 +13,7 @@ edition = 4
 # [agent] — required metadata and optional discovery fields
 # =====================================================================================
 [agent]
-name = "koog-template-agents"
+name = "koog-template-agent"
 version = "0.1.0"
 summary = "A template agent built with Koog (Kotlin)."
 description = "A base template for creating Coral agents using the Koog framework in Kotlin."
@@ -44,7 +44,7 @@ max = 20.00
 min = 0.10
 
 # =====================================================================================
-# [options] — user-configurable parameters
+# [options] - parameters that come in as environment variables set by consumer
 # =====================================================================================
 [options]
 MAX_ITERATIONS = { type = "u32", default = 60, display.description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
@@ -69,26 +69,17 @@ display.description = "The prompt to use for follow-up iterations."
 default = "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability."
 display.multiline = true
 
-[options.MODEL_PROVIDER]
+[options.MODEL_CHOICE]
 type = "string"
-display.description = "The LLM provider to use (OPENAI, OPENROUTER, ANTHROPIC)"
-default = "OPENAI"
+default = "LLM_FAST"
+display.description = "The model choice to use via LLM proxy. Options are LLM_FAST and LLM_BIG"
+validation.variants = ["LLM_FAST", "LLM_BIG"]
 
-[options.MODEL_PROVIDER_URL_OVERRIDE]
+[options.MODEL_FORMAT]
 type = "string"
-display.description = "The base URL for the LLM provider API (OpenAI compatible)"
-default = ""
-
-[options.MODEL_API_KEY]
-type = "string"
-required = true
-display.description = "The API key for the LLM provider (OpenAI compatible)"
-secret = true
-
-[options.MODEL_ID]
-type = "string"
-default = "gpt-5-mini"
-display.description = "The model ID to use for the LLM provider"
+default = "openai"
+display.description = "The model format to use (e.g. openai, anthropic, openrouter)"
+validation.variants = ["openai", "anthropic", "openrouter"]
 
 [options.SYSTEM_PROMPT]
 type = "string"
@@ -103,11 +94,25 @@ You are an AI agent designed to assist users by leveraging available tools and r
 display.multiline = true
 
 # =====================================================================================
+# LLM
+# =====================================================================================
+[[llm.proxies]]
+name = "LLM_FAST"
+format = "openai"
+model = "gpt-5-mini"
+
+[[llm.proxies]]
+name = "LLM_BIG"
+format = "openai"
+model = "gpt-5"
+
+# =====================================================================================
 # Runtimes
 # =====================================================================================
 [runtimes.executable]
 path = "./gradlew"
-arguments = ["run"]
+arguments = ["-q", "run"]
+
 
 #[runtimes.docker]
 #image = ""
