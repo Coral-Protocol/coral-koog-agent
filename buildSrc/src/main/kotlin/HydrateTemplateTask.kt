@@ -9,7 +9,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
     companion object {
         const val TEMPLATE_PACKAGE = "ai.coralprotocol.coral.koog.fullexample"
         const val TEMPLATE_GROUP = "ai.coralprotocol"
-        const val TEMPLATE_AGENT_NAME = "koog-template-agents"
+        const val TEMPLATE_AGENT_NAME = "coral-koog-agent"
         const val TEMPLATE_PROJECT_NAME = "coral-koog-agent"
     }
 
