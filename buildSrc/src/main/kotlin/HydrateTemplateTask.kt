@@ -10,7 +10,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         const val TEMPLATE_PACKAGE = "ai.coralprotocol.coral.koog.fullexample"
         const val TEMPLATE_GROUP = "ai.coralprotocol"
         const val TEMPLATE_AGENT_NAME = "koog-template-agents"
-        const val TEMPLATE_PROJECT_NAME = "koog-coral-agent"
+        const val TEMPLATE_PROJECT_NAME = "coral-koog-agent"
     }
 
     private var agentNameValue: String = ""

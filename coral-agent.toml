@@ -13,12 +13,12 @@ edition = 4
 # [agent] — required metadata and optional discovery fields
 # =====================================================================================
 [agent]
-name = "koog-template-agent"
+name = "coral-koog-agent"
 version = "0.1.0"
-summary = "A template agent built with Koog (Kotlin)."
+summary = "A template agent built with Koog (Kotlin). Includes coral connectivity."
 description = "A base template for creating Coral agents using the Koog framework in Kotlin."
 readme = """
-# Koog Template Agent
+# Coral koog agent
 
 This is a template for building autonomous agents in Kotlin using the Koog framework.
 """
