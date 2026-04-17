@@ -42,6 +42,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateSettingsFile(rootDir, agentName)
         updateAgentManifest(rootDir, agentName)
         updateReadme(rootDir, agentName)
+        updateQuickSessionScript(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
         cleanCompiledOutput(rootDir)
         removeGitRemoteOrigin(rootDir)
@@ -153,6 +154,13 @@ abstract class HydrateTemplateTask : DefaultTask() {
             if (prependixFile.exists()) {
                 prependixFile.delete()
             }
+        }
+    }
+
+    private fun updateQuickSessionScript(rootDir: File, agentName: String) {
+        logStep("Updating scripts/quick-session.sh")
+        updateFile(rootDir.resolve("scripts/quick-session.sh")) { content ->
+            content.replace("AGENT_NAME=\${AGENT_NAME:-coral-koog-agent}", "AGENT_NAME=\${AGENT_NAME:-$agentName}")
         }
     }
 

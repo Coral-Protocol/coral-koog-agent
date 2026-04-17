@@ -66,5 +66,11 @@ Add the container tag to the `runtime` section of `coral-agent.toml`, and then d
 For more information about running coral in production, see [here](https://docs.coralos.ai/guides/production/running-in-production).
 </details>
 
+## devex notes
+
+### fast iteration
+We recommend creating a template in coral consle for easier development, espcially if you end up with many options.
+For a cli alternative, there's a script in `scripts/quick-session.sh` that creates a session with this agent running.
+
 
 ---
