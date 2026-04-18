@@ -1,8 +1,15 @@
 CORAL_BASE_URL=${CORAL_BASE_URL:-localhost:5555}
 CORAL_BEARER_TOKEN=${CORAL_BEARER_TOKEN:-dev}
 AGENT_NAME=${AGENT_NAME:-coral-koog-agent}
-# EXTRA_INITIAL_USER_PROMPT=${EXTRA_INITIAL_USER_PROMPT:-"create a new thread and say hello in it, then share your most unique ideas every 60s"}
-EXTRA_INITIAL_USER_PROMPT=${EXTRA_INITIAL_USER_PROMPT:-$(cat)}
+DEFAULT_EXTRA_INITIAL_USER_PROMPT="create a new thread and say hello in it, then share your most unique ideas every 60s"
+
+# To create a session without asking anything, comment out this entire block.
+if [ -z "${EXTRA_INITIAL_USER_PROMPT+x}" ]; then
+  printf "What should the agent's main goal be?\n"
+  printf "(This sets EXTRA_INITIAL_USER_PROMPT. Press Enter to use default: %s)\n" "${DEFAULT_EXTRA_INITIAL_USER_PROMPT}"
+  read -r USER_MAIN_GOAL
+  EXTRA_INITIAL_USER_PROMPT=${USER_MAIN_GOAL:-${DEFAULT_EXTRA_INITIAL_USER_PROMPT}}
+fi
 
 curl -X POST "http://${CORAL_BASE_URL}/api/v1/local/session" \
   -H "Content-Type: application/json" \

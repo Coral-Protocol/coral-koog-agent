@@ -14,7 +14,7 @@ To run this agent, you'll need to first run the coral server and ensure it's con
 
 You can quickly run a server with just this agent by running:
 ```bash
-npx coralos-dev@latest server start -- --auth.keys=dev --registry.local-agents="."
+npx coralos-dev@latest server start -- --auth.keys=dev --registry.local-agents="$(PWD)"
 ```
 </details>
 

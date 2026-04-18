@@ -160,7 +160,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
     private fun updateQuickSessionScript(rootDir: File, agentName: String) {
         logStep("Updating scripts/quick-session.sh")
         updateFile(rootDir.resolve("scripts/quick-session.sh")) { content ->
-            content.replace("AGENT_NAME=\${AGENT_NAME:-coral-koog-agent}", "AGENT_NAME=\${AGENT_NAME:-$agentName}")
+            content.replace("AGENT_NAME=\${AGENT_NAME:-$TEMPLATE_AGENT_NAME}", "AGENT_NAME=\${AGENT_NAME:-$agentName}")
         }
     }
 
