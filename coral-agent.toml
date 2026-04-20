@@ -94,6 +94,26 @@ You are an AI agent designed to assist users by leveraging available tools and r
 display.multiline = true
 
 # =====================================================================================
+# TUNNEL
+# =====================================================================================
+
+[options.TUNNEL_SERVER_URL]
+type = "string"
+display.description = "The URL of the tunnel server for proxying requests back to the wrapper agent's Coral server."
+default = ""
+
+[options.TUNNEL_UUID]
+type = "string"
+display.description = "The UUID identifying this agent's tunnel on the tunnel server."
+default = ""
+
+[options.TUNNEL_PUBLIC_KEY]
+type = "string"
+display.description = "The wrapper agent's public key (Base64) for encrypting tunnel traffic."
+default = ""
+
+
+# =====================================================================================
 # LLM
 # =====================================================================================
 [[llm.proxies]]

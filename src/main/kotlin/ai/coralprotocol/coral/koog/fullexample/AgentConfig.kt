@@ -34,7 +34,13 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val modelProxyProvider = env.get("CORAL_PROXY_PROVIDER_$modelChoice")
 }
 
-data class ResolvedAgentSettings(private val env: EnvironmentOptionProvider) {
+data class TunnelSettings(
+    val serverUrl: String,
+    val uuid: String,
+    val publicKey: String
+)
+
+data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
     val systemPrompt = env["SYSTEM_PROMPT"]
     val extraSystemPrompt = env["EXTRA_SYSTEM_PROMPT"]
     val extraInitialUserPrompt = env["EXTRA_INITIAL_USER_PROMPT"]
@@ -44,6 +50,16 @@ data class ResolvedAgentSettings(private val env: EnvironmentOptionProvider) {
     val iterationDelayMs = env.get("ITERATION_DELAY_MS").toInt().milliseconds
 
     val coral = CoralSettings(env)
+
+    /** Non-null when this agent is being tunneled through a cloud wrapper. */
+    val tunnel: TunnelSettings? by lazy {
+        val url = env.getOptional("TUNNEL_SERVER_URL")?.takeIf { it.isNotBlank() }
+        val uuid = env.getOptional("TUNNEL_UUID")?.takeIf { it.isNotBlank() }
+        val key = env.getOptional("TUNNEL_PUBLIC_KEY")?.takeIf { it.isNotBlank() }
+        if (url != null && uuid != null && key != null) {
+            TunnelSettings(serverUrl = url, uuid = uuid, publicKey = key)
+        } else null
+    }
 }
 
 interface EnvironmentOptionProvider {

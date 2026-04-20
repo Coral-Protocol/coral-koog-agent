@@ -20,6 +20,8 @@ repositories {
 
 // Directory where GraalVM native-image agent will dump collected configuration
 val nativeImageConfigDir = layout.projectDirectory.dir("src/native-image").asFile
+val ktorVersion = "3.2.3"
+
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -30,6 +32,13 @@ dependencies {
     // serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+
+    // Ktor server (for agent-adjacent tunnel proxy)
+    implementation("io.ktor:ktor-server-core:${ktorVersion}")
+    implementation("io.ktor:ktor-server-cio:${ktorVersion}")
+     // Ktor client (for forwarding requests through tunnel)
+    implementation("io.ktor:ktor-client-cio:${ktorVersion}")
+    implementation("io.ktor:ktor-client-content-negotiation:${ktorVersion}")
 
 }
 

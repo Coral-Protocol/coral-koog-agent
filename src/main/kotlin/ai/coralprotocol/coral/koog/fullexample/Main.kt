@@ -1,5 +1,7 @@
 package ai.coralprotocol.coral.koog.fullexample
 
+import ai.coralprotocol.coral.koog.fullexample.tunnel.rewriteUrlForTunnel
+import ai.coralprotocol.coral.koog.fullexample.tunnel.startAgentAdjacentTunnelProxy
 import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
 import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
@@ -39,19 +41,44 @@ fun main() {
 
 @OptIn(ExperimentalUuidApi::class)
 fun runAgent(settings: ResolvedAgentSettings) {
+    // If tunnel settings are present, start the agent-adjacent tunnel proxy
+    // and rewrite the Coral URLs to go through it.
+    val tunnel = settings.tunnel
+    val effectiveConnectionUrl: String
+    val effectiveModelProxyUrl: String
+
+    if (tunnel != null) {
+        println("[ProxyConsumer] Tunnel mode detected, starting agent-adjacent tunnel proxy...")
+        val proxyInfo = startAgentAdjacentTunnelProxy(
+            tunnelSettings = tunnel,
+            agentSecret = settings.coral.agentSecret
+        )
+        effectiveConnectionUrl = rewriteUrlForTunnel(
+            settings.coral.connectionUrl, settings.coral.apiUrl, proxyInfo.localBaseUrl, settings.coral.agentSecret
+        )
+        effectiveModelProxyUrl = rewriteUrlForTunnel(
+            settings.coral.modelProxyUrl, settings.coral.apiUrl, proxyInfo.localBaseUrl, settings.coral.agentSecret
+        )
+        println("[ProxyConsumer] Rewritten connection URL: $effectiveConnectionUrl")
+        println("[ProxyConsumer] Rewritten LLM proxy URL: $effectiveModelProxyUrl")
+    } else {
+        effectiveConnectionUrl = settings.coral.connectionUrl
+        effectiveModelProxyUrl = settings.coral.modelProxyUrl
+    }
+
     runBlocking {
         val executor: PromptExecutor =
             getPromptExecutor(
                 settings.coral.modelProxyFormat,
-                settings.coral.modelProxyUrl)
+                effectiveModelProxyUrl)
 
         val llmModel =
             findKoogModelByInfo(settings.coral.modelProxyModel, settings.coral.modelProxyProvider, settings.coral.modelProxyFormat)
 
-        println("Connecting to MCP server at ${settings.coral.connectionUrl}")
+        println("Connecting to MCP server at ${effectiveModelProxyUrl}")
 
         val coralMcpClient = try {
-            getMcpClientStreamableHttp(settings.coral.connectionUrl)
+            getMcpClientStreamableHttp(effectiveConnectionUrl)
         } catch (e: Throwable) {
             throw processCoralThrowable(e)
         }
