@@ -1,0 +1,20 @@
+{
+  "packages": {
+    ".": {
+      "package-name": "coral-koog-agent",
+      "release-type": "simple",
+      "extra-files": [
+        {
+          "type": "regex",
+          "path": "coral-agent.toml",
+          "regex": [
+            {
+              "pattern": "version = \"[^\"]*\"",
+              "replacement": "version = \"$VERSION\""
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
