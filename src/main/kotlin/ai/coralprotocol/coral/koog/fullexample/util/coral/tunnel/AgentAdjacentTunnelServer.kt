@@ -1,6 +1,5 @@
-package ai.coralprotocol.coral.koog.fullexample.tunnel
+package ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel
 
-import ai.coralprotocol.coral.koog.fullexample.TunnelSettings
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.header
@@ -14,6 +13,15 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+
+/**
+ * Settings for the agent-adjacent tunnel proxy.
+ */
+data class TunnelSettings(
+    val serverUrl: String,
+    val uuid: String,
+    val publicKey: String
+)
 
 /** Fixed placeholder that replaces the real agent secret in tunneled requests. */
 const val TUNNEL_SECRET_PLACEHOLDER = "TUNNEL_AGENT_SECRET"

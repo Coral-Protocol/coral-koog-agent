@@ -15,6 +15,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
 
     private var agentNameValue: String = ""
     private var packageNameValue: String = ""
+    private var enableTunnelValue: Boolean = false
 
     @Option(option = "agentName", description = "Name for the agent (kebab-case, e.g. my-cool-agent)")
     fun setAgentName(value: String) {
@@ -26,24 +27,31 @@ abstract class HydrateTemplateTask : DefaultTask() {
         packageNameValue = value
     }
 
+    @Option(option = "enableTunnel", description = "Whether to enable tunnel functionality (default: false)")
+    fun setEnableTunnel(value: String) {
+        enableTunnelValue = value.toBoolean()
+    }
+
     @TaskAction
     fun hydrate() {
         val rootDir = project.rootDir
         val agentName = resolveParam("agentName", agentNameValue, "Agent name (kebab-case, e.g. my-cool-agent)")
         val packageName = resolveParam("packageName", packageNameValue, "Package name (e.g. com.example.myagent)")
+        val enableTunnel = enableTunnelValue
 
         validate(agentName, packageName)
 
         val group = deriveGroup(packageName)
         val mainClassFqn = "$packageName.MainKt"
 
-        logStart(agentName, packageName)
+        logStart(agentName, packageName, enableTunnel)
         updateBuildFile(rootDir, group, agentName, mainClassFqn)
         updateSettingsFile(rootDir, agentName)
-        updateAgentManifest(rootDir, agentName)
+        updateAgentManifest(rootDir, agentName, enableTunnel)
         updateReadme(rootDir, agentName)
         updateQuickSessionScript(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
+        updateSourceFiles(rootDir, enableTunnel)
         cleanCompiledOutput(rootDir)
         removeGitRemoteOrigin(rootDir)
         removeHydratorArtifacts(rootDir)
@@ -58,11 +66,12 @@ abstract class HydrateTemplateTask : DefaultTask() {
         return segments.take(minOf(segments.size, 3)).joinToString(".")
     }
 
-    private fun logStart(agentName: String, packageName: String) {
+    private fun logStart(agentName: String, packageName: String, enableTunnel: Boolean) {
         logger.quiet("")
         logger.quiet("Hydrating Coral Koog Agent Template")
-        logger.quiet("Agent name:   $agentName")
-        logger.quiet("Package name: $packageName")
+        logger.quiet("Agent name:    $agentName")
+        logger.quiet("Package name:  $packageName")
+        logger.quiet("Enable tunnel: $enableTunnel")
         logger.quiet("")
     }
 
@@ -94,10 +103,10 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
     }
 
-    private fun updateAgentManifest(rootDir: File, agentName: String) {
+    private fun updateAgentManifest(rootDir: File, agentName: String, enableTunnel: Boolean) {
         logStep("Updating coral-agent.toml")
         updateFile(rootDir.resolve("coral-agent.toml")) { content ->
-            content
+            var updated = content
                 .replace("name = \"$TEMPLATE_AGENT_NAME\"", "name = \"$agentName\"")
                 .replace(
                     "summary = \"A template agent built with Koog (Kotlin).\"",
@@ -116,7 +125,66 @@ abstract class HydrateTemplateTask : DefaultTask() {
                     "keywords = [\"template\", \"koog\", \"kotlin\", \"example\"]",
                     "keywords = [\"koog\", \"kotlin\", \"$agentName\"]"
                 )
+
+            if (!enableTunnel) {
+                updated = updated.removeMarkedBlock("TUNNEL_OPTIONS")
+            }
+            updated
         }
+    }
+
+    private fun updateSourceFiles(rootDir: File, enableTunnel: Boolean) {
+        if (enableTunnel) return
+
+        logStep("Removing tunnel functionality from source files")
+        val srcRoot = rootDir.resolve("src/main/kotlin")
+        srcRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .forEach { file ->
+                updateFile(file) { content ->
+                    content
+                        .removeMarkedBlock("TUNNEL_IMPORT")
+                        .replaceMarkedBlock("TUNNEL_START", "TUNNEL_END") {
+                            """
+    val effectiveConnectionUrl = settings.coral.connectionUrl
+    val effectiveModelProxyUrl = settings.coral.modelProxyUrl
+                            """.trimIndent().prependIndent("    ")
+                        }
+                        .removeMarkedBlock("TUNNEL_SETTINGS")
+                        .removeMarkedBlock("TUNNEL_PROPERTY")
+                }
+            }
+    }
+
+    private fun String.removeMarkedBlock(markerName: String): String {
+        val startMarker = "{CORALIZER:${markerName}_START}"
+        val endMarker = "{CORALIZER:${markerName}_END}"
+        val singleMarker = "{CORALIZER:$markerName}"
+
+        var result = this
+        // Handle block markers
+        while (result.contains(startMarker) && result.contains(endMarker)) {
+            val startIndex = result.lastIndexOf("\n", result.indexOf(startMarker)).let { if (it == -1) 0 else it + 1 }
+            val endIndex = result.indexOf("\n", result.indexOf(endMarker)).let { if (it == -1) result.length else it + 1 }
+            result = result.removeRange(startIndex, endIndex)
+        }
+        // Handle single line markers
+        result = result.lines().filter { !it.contains(singleMarker) }.joinToString("\n")
+
+        return result
+    }
+
+    private fun String.replaceMarkedBlock(startMarkerName: String, endMarkerName: String, replacement: () -> String): String {
+        val startMarker = "{CORALIZER:$startMarkerName}"
+        val endMarker = "{CORALIZER:$endMarkerName}"
+
+        var result = this
+        while (result.contains(startMarker) && result.contains(endMarker)) {
+            val startIndex = result.lastIndexOf("\n", result.indexOf(startMarker)).let { if (it == -1) 0 else it + 1 }
+            val endIndex = result.indexOf("\n", result.indexOf(endMarker)).let { if (it == -1) result.length else it + 1 }
+            result = result.replaceRange(startIndex, endIndex, replacement() + "\n")
+        }
+        return result
     }
 
     private fun updateReadme(rootDir: File, agentName: String) {

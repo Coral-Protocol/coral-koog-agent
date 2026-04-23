@@ -1,7 +1,8 @@
 package ai.coralprotocol.coral.koog.fullexample
 
-import ai.coralprotocol.coral.koog.fullexample.tunnel.rewriteUrlForTunnel
-import ai.coralprotocol.coral.koog.fullexample.tunnel.startAgentAdjacentTunnelProxy
+import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.rewriteUrlForTunnel //{CORALIZER:TUNNEL_IMPORT}
+import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.startAgentAdjacentTunnelProxy //{CORALIZER:TUNNEL_IMPORT}
+import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.TunnelSettings //{CORALIZER:TUNNEL_IMPORT}
 import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
 import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
@@ -41,6 +42,7 @@ fun main() {
 
 @OptIn(ExperimentalUuidApi::class)
 fun runAgent(settings: ResolvedAgentSettings) {
+    // {CORALIZER:TUNNEL_START}
     // If tunnel settings are present, start the agent-adjacent tunnel proxy
     // and rewrite the Coral URLs to go through it.
     val tunnel = settings.tunnel
@@ -65,6 +67,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
         effectiveConnectionUrl = settings.coral.connectionUrl
         effectiveModelProxyUrl = settings.coral.modelProxyUrl
     }
+    // {CORALIZER:TUNNEL_END}
 
     runBlocking {
         val executor: PromptExecutor =

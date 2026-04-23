@@ -2,6 +2,7 @@ package ai.coralprotocol.coral.koog.fullexample
 
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
+import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.TunnelSettings //{CORALIZER:TUNNEL_IMPORT}
 
 /**
  * Minimal config loader that reads values from environment variables or a dev env file.
@@ -24,7 +25,7 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val connectionUrl = env["CORAL_CONNECTION_URL"]
     val runtimeId = env["CORAL_RUNTIME_ID"]
     val sessionId = env["CORAL_SESSION_ID"]
-    val sendClaims = env["CORAL_SEND_CLAIMS"].toDouble().toInt()
+    val sendClaims = env.getOptional("CORAL_SEND_CLAIMS")?.toInt() ?: 0
 
     // note: we're masking some unused coral envs here. Feel free to change if multiple models are used.
     val modelChoice = env.get("MODEL_CHOICE")
@@ -34,11 +35,6 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val modelProxyProvider = env.get("CORAL_PROXY_PROVIDER_$modelChoice")
 }
 
-data class TunnelSettings(
-    val serverUrl: String,
-    val uuid: String,
-    val publicKey: String
-)
 
 data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
     val systemPrompt = env["SYSTEM_PROMPT"]
@@ -51,6 +47,7 @@ data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
 
     val coral = CoralSettings(env)
 
+    // {CORALIZER:TUNNEL_PROPERTY_START}
     /** Non-null when this agent is being tunneled through a cloud wrapper. */
     val tunnel: TunnelSettings? by lazy {
         val url = env.getOptional("TUNNEL_SERVER_URL")?.takeIf { it.isNotBlank() }
@@ -60,6 +57,7 @@ data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
             TunnelSettings(serverUrl = url, uuid = uuid, publicKey = key)
         } else null
     }
+    // {CORALIZER:TUNNEL_PROPERTY_END}
 }
 
 interface EnvironmentOptionProvider {

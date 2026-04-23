@@ -31,7 +31,7 @@ text = "apache-2.0"
 # [marketplace] — discovery, pricing, and identities
 # =====================================================================================
 [marketplace]
-keywords = ["template", "koog", "kotlin", "example"]
+keywords = ["template", "koog", "kotlin", "example", "cw-wrappable"]
 
 [marketplace.pricing]
 currency = "USD"
@@ -93,6 +93,7 @@ You are an AI agent designed to assist users by leveraging available tools and r
 """
 display.multiline = true
 
+# {CORALIZER:TUNNEL_OPTIONS_START}
 # =====================================================================================
 # TUNNEL
 # =====================================================================================
@@ -111,6 +112,7 @@ default = ""
 type = "string"
 display.description = "The wrapper agent's public key (Base64) for encrypting tunnel traffic."
 default = ""
+# {CORALIZER:TUNNEL_OPTIONS_END}
 
 
 # =====================================================================================
