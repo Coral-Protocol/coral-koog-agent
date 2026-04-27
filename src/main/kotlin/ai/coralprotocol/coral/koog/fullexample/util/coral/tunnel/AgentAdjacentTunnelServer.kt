@@ -2,17 +2,19 @@ package ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.request.header
-import io.ktor.client.request.request
+import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readRawBytes
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.copyTo
 
 /**
  * Settings for the agent-adjacent tunnel proxy.
@@ -55,7 +57,15 @@ fun startAgentAdjacentTunnelProxy(
 ): AgentTunnelProxyInfo {
     val tunnelBaseUrl = "${tunnelSettings.serverUrl.trimEnd('/')}/${tunnelSettings.uuid}"
 
-    val httpClient = HttpClient(CIO)
+    val httpClient = HttpClient(CIO) {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60000
+            connectTimeoutMillis = 60000
+            socketTimeoutMillis = 60000
+        }
+        install(SSE)
+        expectSuccess = false
+    }
 
     val server = embeddedServer(io.ktor.server.cio.CIO, port = port) {
         routing {
@@ -70,10 +80,8 @@ fun startAgentAdjacentTunnelProxy(
 
                     val tunnelUrl = "$tunnelBaseUrl$sanitizedPath"
 
-                    val bodyBytes = call.receive<ByteArray>()
-
                     try {
-                        val response: HttpResponse = httpClient.request(tunnelUrl) {
+                        httpClient.prepareRequest(tunnelUrl) {
                             method = HttpMethod.parse(call.request.httpMethod.value)
 
                             // Forward headers, replacing agent secret in values
@@ -86,21 +94,20 @@ fun startAgentAdjacentTunnelProxy(
                                 }
                             }
 
-                            if (bodyBytes.isNotEmpty()) {
-                                setBody(bodyBytes)
+                            setBody(call.receiveChannel())
+                        }.execute { response ->
+                            // Forward response headers back
+                            response.headers.forEach { name, values ->
+                                if (!name.equals("Content-Length", ignoreCase = true) &&
+                                    !name.equals("Transfer-Encoding", ignoreCase = true)) {
+                                    values.forEach { value -> call.response.header(name, value) }
+                                }
+                            }
+
+                            call.respondBytesWriter(status = response.status) {
+                                response.bodyAsChannel().copyTo(this)
                             }
                         }
-
-                        // Forward response headers back
-                        response.headers.forEach { name, values ->
-                            if (!name.equals("Content-Length", ignoreCase = true) &&
-                                !name.equals("Transfer-Encoding", ignoreCase = true)) {
-                                values.forEach { value -> call.response.header(name, value) }
-                            }
-                        }
-
-                        val responseBody = response.readRawBytes()
-                        call.respondBytes(responseBody, status = response.status)
                     } catch (e: Exception) {
                         println("[AgentTunnelProxy] Error proxying request to $tunnelUrl: ${e.message}")
                         call.respondText(
