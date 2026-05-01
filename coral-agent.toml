@@ -14,7 +14,7 @@ edition = 4
 # =====================================================================================
 [agent]
 name = "coral-koog-agent"
-version = "0.1.0"
+version = "1.1.0"
 summary = "A template agent built with Koog (Kotlin). Includes coral connectivity."
 description = "A base template for creating Coral agents using the Koog framework in Kotlin."
 readme = """

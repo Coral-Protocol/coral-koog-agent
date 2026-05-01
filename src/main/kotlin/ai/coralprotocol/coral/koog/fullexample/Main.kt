@@ -2,7 +2,6 @@ package ai.coralprotocol.coral.koog.fullexample
 
 import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.rewriteUrlForTunnel //{CORALIZER:TUNNEL_IMPORT}
 import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.startAgentAdjacentTunnelProxy //{CORALIZER:TUNNEL_IMPORT}
-import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.TunnelSettings //{CORALIZER:TUNNEL_IMPORT}
 import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
 import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
@@ -19,7 +18,11 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
-
+private val logLatestLlmRequestToLogFile = true
+private val llmLogJson = Json {
+    prettyPrint = true
+    prettyPrintIndent = "  "
+}
 private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
     return ToolRegistry {
         tools(coralToolRegistry.tools)
@@ -135,9 +138,11 @@ fun runAgent(settings: ResolvedAgentSettings) {
                         }
 
                         // For debugging: save the full prompt messages to a file
-                        llm.readSession {
-                            val file = File("agent_log.json")
-                            file.writeText(Json.encodeToString(prompt.messages))
+                        if(logLatestLlmRequestToLogFile) {
+                            llm.readSession {
+                                val file = File("agent_log.json")
+                                file.writeText(llmLogJson.encodeToString(prompt.messages))
+                            }
                         }
 
                         val tokens = latestTokenUsage()
