@@ -3,7 +3,7 @@ plugins {
     application
     kotlin("plugin.serialization") version "2.3.10"
     id("org.graalvm.buildtools.native") version "0.10.2"
-    id("com.gradleup.shadow") version "8.3.5"
+//    id("com.gradleup.shadow") version "8.3.5"
 }
 
 // Ensure ./gradlew -q hydrate is not interrupted by gradle execution updates (progress bars)
@@ -66,14 +66,14 @@ application {
 
 graalvmNative {
     toolchainDetection.set(false)
-    agent {
-        enabled.set(true)
-        metadataCopy {
-            inputTaskNames.add("run")
-            outputDirectories.add(nativeImageConfigDir.absolutePath)
-            mergeWithExisting.set(true)
-        }
-    }
+//    agent {
+//        enabled.set(true)
+//        metadataCopy {
+//            inputTaskNames.add("run")
+//            outputDirectories.add(nativeImageConfigDir.absolutePath)
+//            mergeWithExisting.set(true)
+//        }
+//    }
     binaries {
         named("main") {
             imageName.set("coral-koog-agent") //{CORALIZER:NATIVE_BINARY_IMAGE_NAME}

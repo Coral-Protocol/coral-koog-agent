@@ -713,6 +713,12 @@
       "glob": "kotlin/time/time.kotlin_builtins"
     },
     {
+      "glob": "kotlin/kotlin.kotlin_builtins"
+    },
+    {
+      "glob": "kotlin/collections/collections.kotlin_builtins"
+    },
+    {
       "glob": "org/slf4j/impl/StaticLoggerBinder.class"
     }
   ],
