@@ -121,12 +121,12 @@ default = ""
 [[llm.proxies]]
 name = "LLM_FAST"
 format = "openai"
-model = "gpt-5-mini"
+model = "gpt-5.4-mini"
 
 [[llm.proxies]]
 name = "LLM_BIG"
 format = "openai"
-model = "gpt-5"
+model = "gpt-5.5"
 
 # =====================================================================================
 # Runtimes

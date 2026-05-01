@@ -54,6 +54,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateSourceFiles(rootDir, enableTunnel)
         cleanCompiledOutput(rootDir)
         removeGitRemoteOrigin(rootDir)
+        gitCreateBranch(rootDir, "main")
         removeHydratorArtifacts(rootDir)
 
         logStep("Committing hydrated state")
@@ -406,6 +407,27 @@ abstract class HydrateTemplateTask : DefaultTask() {
             }
         } catch (e: Exception) {
             logger.warn("Could not run 'git remote remove origin': ${e.message}")
+        }
+    }
+
+    private fun gitCreateBranch(rootDir: File, branchName: String) {
+        if (!rootDir.resolve(".git").exists()) return
+
+        try {
+            val process = ProcessBuilder("git", "checkout", "-B", branchName)
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+            val exitCode = process.waitFor()
+
+            if (exitCode == 0) {
+                logStep("Switched to branch '$branchName'")
+            } else {
+                val output = process.inputStream.bufferedReader().readText().trim()
+                logger.warn("Failed to checkout branch '$branchName': $output")
+            }
+        } catch (e: Exception) {
+            logger.warn("Could not run 'git checkout -B $branchName': ${e.message}")
         }
     }
 

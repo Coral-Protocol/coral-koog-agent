@@ -710,12 +710,6 @@
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
-      "glob": "kotlin/collections/collections.kotlin_builtins"
-    },
-    {
-      "glob": "kotlin/kotlin.kotlin_builtins"
-    },
-    {
       "glob": "kotlin/time/time.kotlin_builtins"
     },
     {

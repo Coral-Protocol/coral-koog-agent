@@ -29,6 +29,22 @@ dependencies {
     val koogVersion = "0.8.0"
     api("ai.koog:koog-agents:$koogVersion")
     api("ai.koog:agents-mcp:$koogVersion")
+
+    // Workaround for https://github.com/oshai/kotlin-logging/issues/465
+    // and GraalVM build error with version 8.x
+    constraints {
+        implementation("io.github.oshai:kotlin-logging") {
+            version {
+                strictly("7.0.14")
+            }
+        }
+        implementation("io.github.oshai:kotlin-logging-jvm") {
+            version {
+                strictly("7.0.14")
+            }
+        }
+    }
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     // serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
