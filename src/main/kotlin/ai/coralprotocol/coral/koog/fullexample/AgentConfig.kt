@@ -32,7 +32,7 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val modelProxyUrl = env.get("CORAL_PROXY_URL_$modelChoice")
     val modelProxyModel = env.get("CORAL_PROXY_MODEL_$modelChoice")
     val modelProxyFormat = env.get("CORAL_PROXY_FORMAT_$modelChoice")
-    val modelProxyProvider = env.get("CORAL_PROXY_PROVIDER_$modelChoice")
+    val modelProxyProvider = env.getOptional("CORAL_PROXY_PROVIDER_$modelChoice") ?: "openai"
 }
 
 
