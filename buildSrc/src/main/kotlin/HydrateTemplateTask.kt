@@ -16,6 +16,10 @@ abstract class HydrateTemplateTask : DefaultTask() {
     private var agentNameValue: String = ""
     private var packageNameValue: String = ""
     private var enableTunnelValue: Boolean = false
+    private var keepWorkflowsValue: String = ""
+    private var keepPublishJvmValue: String = ""
+    private var keepPublishNativeValue: String = ""
+    private var keepReleasePleaseValue: String = ""
 
     @Option(option = "agentName", description = "Name for the agent (kebab-case, e.g. my-cool-agent)")
     fun setAgentName(value: String) {
@@ -30,6 +34,26 @@ abstract class HydrateTemplateTask : DefaultTask() {
     @Option(option = "enableTunnel", description = "Whether to enable tunnel functionality (default: false)")
     fun setEnableTunnel(value: String) {
         enableTunnelValue = value.toBoolean()
+    }
+
+    @Option(option = "keepWorkflows", description = "Whether to keep each GitHub workflow (true/false/prompt)")
+    fun setKeepWorkflows(value: String) {
+        keepWorkflowsValue = value
+    }
+
+    @Option(option = "keepPublishJvm", description = "Whether to keep the publish-jvm workflow (true/false)")
+    fun setKeepPublishJvm(value: String) {
+        keepPublishJvmValue = value
+    }
+
+    @Option(option = "keepPublishNative", description = "Whether to keep the publish-native workflow (true/false)")
+    fun setKeepPublishNative(value: String) {
+        keepPublishNativeValue = value
+    }
+
+    @Option(option = "keepReleasePlease", description = "Whether to keep the release-please workflow (true/false)")
+    fun setKeepReleasePlease(value: String) {
+        keepReleasePleaseValue = value
     }
 
     @TaskAction
@@ -52,6 +76,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateQuickSessionScript(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
         updateSourceFiles(rootDir, enableTunnel)
+        manageWorkflows(rootDir)
         cleanCompiledOutput(rootDir)
         removeGitRemoteOrigin(rootDir)
         gitCreateBranch(rootDir, "main")
@@ -73,6 +98,10 @@ abstract class HydrateTemplateTask : DefaultTask() {
         logger.quiet("Agent name:    $agentName")
         logger.quiet("Package name:  $packageName")
         logger.quiet("Enable tunnel: $enableTunnel")
+        if (keepWorkflowsValue.isNotBlank()) logger.quiet("Keep workflows: $keepWorkflowsValue")
+        if (keepPublishJvmValue.isNotBlank()) logger.quiet("Keep publish-jvm: $keepPublishJvmValue")
+        if (keepPublishNativeValue.isNotBlank()) logger.quiet("Keep publish-native: $keepPublishNativeValue")
+        if (keepReleasePleaseValue.isNotBlank()) logger.quiet("Keep release-please: $keepReleasePleaseValue")
         logger.quiet("")
     }
 
@@ -155,6 +184,99 @@ abstract class HydrateTemplateTask : DefaultTask() {
                         .removeMarkedBlock("TUNNEL_PROPERTY")
                 }
             }
+    }
+
+    private fun manageWorkflows(rootDir: File) {
+        val workflowsDir = rootDir.resolve(".github/workflows")
+        if (!workflowsDir.exists() || !workflowsDir.isDirectory) return
+
+        val workflows = workflowsDir.listFiles { f -> f.isFile && (f.extension == "yml" || f.extension == "yaml") } ?: return
+        if (workflows.isEmpty()) return
+
+        val globalKeep = parseKeepPolicy(keepWorkflowsValue.ifBlank {
+            project.findProperty("keepWorkflows")?.toString() ?: ""
+        })
+
+        if (globalKeep == null) {
+            logStep("GitHub workflows found. Specific options or prompting will be used.")
+        } else {
+            logStep("Managing GitHub workflows (global policy: ${if (globalKeep) "keep" else "remove"})")
+        }
+
+        workflows.sortedBy { it.name }.forEach { workflowFile ->
+            val specificKeep = when (workflowFile.name) {
+                "publish-jvm.yml" -> parseKeepPolicy(
+                    keepPublishJvmValue.ifBlank { project.findProperty("keepPublishJvm")?.toString() ?: "" }
+                )
+                "publish-native.yml" -> parseKeepPolicy(
+                    keepPublishNativeValue.ifBlank { project.findProperty("keepPublishNative")?.toString() ?: "" }
+                )
+                "release-please.yml" -> parseKeepPolicy(
+                    keepReleasePleaseValue.ifBlank { project.findProperty("keepReleasePlease")?.toString() ?: "" }
+                )
+                else -> null
+            }
+
+            val keep = specificKeep ?: globalKeep ?: promptKeepWorkflow(workflowFile.name)
+
+            if (!keep) {
+                logStep("Removing workflow: ${workflowFile.name}")
+                gitRemove(rootDir, ".github/workflows/${workflowFile.name}")
+                // In case it's not in git, or git rm failed to remove from disk
+                if (workflowFile.exists()) {
+                    workflowFile.delete()
+                }
+
+                if (workflowFile.name == "release-please.yml") {
+                    removeReleasePleaseConfig(rootDir)
+                }
+            }
+        }
+
+        // If .github/workflows is empty, remove it and .github if empty
+        val remainingWorkflows = workflowsDir.listFiles()
+        if (remainingWorkflows != null && remainingWorkflows.isEmpty()) {
+            logStep("Removing empty workflows directory")
+            workflowsDir.delete()
+            val githubDir = workflowsDir.parentFile
+            if (githubDir != null && githubDir.name == ".github" && githubDir.listFiles()?.isEmpty() == true) {
+                githubDir.delete()
+            }
+        }
+    }
+
+    private fun parseKeepPolicy(value: String): Boolean? {
+        return when (value.lowercase()) {
+            "true", "yes", "all", "keep" -> true
+            "false", "no", "none", "remove" -> false
+            else -> null
+        }
+    }
+
+    private fun removeReleasePleaseConfig(rootDir: File) {
+        logStep("Removing release-please configuration files")
+        val githubDir = rootDir.resolve(".github")
+        val configFiles = listOf("release-please-config.json", "release-please-manifest.json")
+        configFiles.forEach { fileName ->
+            val file = githubDir.resolve(fileName)
+            if (file.exists()) {
+                gitRemove(rootDir, ".github/$fileName")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        }
+    }
+
+    private fun promptKeepWorkflow(fileName: String): Boolean {
+        print("Keep workflow '$fileName'? [Y/n]: ")
+        System.out.flush()
+        val input = try {
+            System.console()?.readLine() ?: readlnOrNull()
+        } catch (_: Exception) {
+            null
+        }
+        return input.isNullOrBlank() || input.lowercase().startsWith("y")
     }
 
     private fun String.removeMarkedBlock(markerName: String): String {
