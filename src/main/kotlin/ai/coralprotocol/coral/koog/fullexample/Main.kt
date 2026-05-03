@@ -68,7 +68,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
         println("[ProxyConsumer] Rewritten LLM proxy URL: $effectiveModelProxyUrl")
     } else {
         effectiveConnectionUrl = settings.coral.connectionUrl
-        effectiveModelProxyUrl = settings.coral.modelProxyUrl
+        effectiveModelProxyUrl = settings.coral.modelProxyUrl + "/openai"
     }
     // {CORALIZER:TUNNEL_END}
 
