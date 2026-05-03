@@ -29,11 +29,43 @@ fun mainPrintDevEnv() {
         return
     }
 
+    val tomlLines = tomlFile.readLines()
+    val optionsKeys = mutableSetOf<String>()
+    var inOptions = false
+    for (line in tomlLines) {
+        val trimmed = line.trim()
+        val lineWithoutComment = trimmed.substringBefore("#").trim()
+        if (lineWithoutComment.startsWith("[") && lineWithoutComment.endsWith("]")) {
+            val section = lineWithoutComment.removeSurrounding("[", "]").trim()
+            if (section == "options") {
+                inOptions = true
+            } else if (section.startsWith("options.")) {
+                val key = section.substringAfter("options.").trim()
+                if (key.isNotEmpty()) optionsKeys.add(key)
+                inOptions = false
+            } else {
+                inOptions = false
+            }
+            continue
+        }
+
+        if (inOptions && lineWithoutComment.contains("=")) {
+            val key = lineWithoutComment.substringBefore("=").trim()
+            if (key.isNotEmpty()) {
+                optionsKeys.add(key)
+            }
+        }
+    }
+
     val devEnvFile = File("coral-agent.dev.env")
     
-    val devEnvLines = System.getenv().map { (key, value) ->
-        "$key=\"${value.replace("\"", "\\\"")}\""
-    }
+    val devEnvLines = System.getenv()
+        .filter { (key, _) ->
+            key in optionsKeys || key.startsWith("CORAL_")
+        }
+        .map { (key, value) ->
+            "$key=\"${value.replace("\"", "\\\"")}\""
+        }
 
     devEnvFile.writeText(devEnvLines.joinToString("\n"))
     println("Successfully created coral-agent.dev.env with ${devEnvLines.size} environment variables.")
