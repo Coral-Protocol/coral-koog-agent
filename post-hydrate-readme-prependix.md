@@ -9,15 +9,6 @@ To learn more about CoralOS, check out [docs.coralos.ai](https://docs.coralos.ai
 ### During development
 To run this agent, you'll need to first run the coral server and ensure it's configured to have this agent:
 
-<details>
-<summary>Running server with just this agent</summary>
-
-You can quickly run a server with just this agent by running:
-```bash
-npx coralos-dev@latest server start -- --auth.keys=dev --registry.local-agents="."
-```
-</details>
-
 ### Running via a local coral server installation
 You can link this agent to your "agent home" directory, which will make it available to any coral server running on your machine:
 
@@ -33,7 +24,7 @@ npx coralos-dev@latest server start -- --auth.keys=dev
 ### Running directly or via your IDE
 You can run this agent directly by first orchestrating it to run through the Coral Server and recording the environment variables it runs with.
 
-#### 1. Set the agent to record these values instead of running by 
+#### 1. Set the agent to record these values instead of running by
 Go to Main.kt and uncomment the main method at the bottom of the file.
 
 #### 2. Create a session that runs this agent with a long timeout
@@ -65,6 +56,12 @@ Add the container tag to the `runtime` section of `coral-agent.toml`, and then d
 
 For more information about running coral in production, see [here](https://docs.coralos.ai/guides/production/running-in-production).
 </details>
+
+## devex notes
+
+### fast iteration
+We recommend creating a template in the coral console for easier development, especially if you end up with many options.
+For a cli alternative, there's a script in `scripts/quick-session.sh` that creates a session with this agent running.
 
 
 ---

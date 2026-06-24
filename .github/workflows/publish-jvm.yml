@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -71,3 +71,26 @@ jobs:
         run: |
           docker image push ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
           docker image push ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}-slim
+
+      - name: Generate coral-agent.toml for release
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}-slim
+        run: |
+          # Find the line number of the first occurrence of runtimes section (commented or not)
+          LINE_NUM=$(grep -nE '^\s*#?\s*\[runtimes\.' coral-agent.toml | head -n 1 | cut -d: -f1)
+          if [ -n "$LINE_NUM" ]; then
+            # Delete from that line to the end of file
+            sed -i "${LINE_NUM},\$d" coral-agent.toml
+          fi
+          # Append the new [runtimes.docker] section
+          printf "\n[runtimes.docker]\nimage = \"$IMAGE_TAG\"\n" >> coral-agent.toml
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Release ${{ steps.meta.outputs.tag }}
+          files: coral-agent.toml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

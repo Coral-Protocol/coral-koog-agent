@@ -1,13 +1,11 @@
 package ai.coralprotocol.coral.koog.fullexample
 
+import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
+import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
 import ai.coralprotocol.coral.koog.fullexample.util.executeMultipleToolsCatching
-import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByName
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.agents.core.dsl.extension.extractToolCalls
-import ai.koog.agents.core.dsl.extension.latestTokenUsage
-import ai.koog.agents.core.dsl.extension.requestLLMOnlyCallingTools
 import ai.koog.agents.core.environment.result
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.mcp.McpToolRegistryProvider
@@ -16,8 +14,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
-import kotlin.uuid.ExperimentalUuidApi
-
+import kotlin.time.Duration.Companion.milliseconds
+private val logLatestLlmRequestToLogFile = true
+private val llmLogJson = Json {
+    prettyPrint = true
+    prettyPrintIndent = "  "
+}
 private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
     return ToolRegistry {
         tools(coralToolRegistry.tools)
@@ -38,17 +40,24 @@ fun main() {
     runAgent(settings)
 }
 
-@OptIn(ExperimentalUuidApi::class)
 fun runAgent(settings: ResolvedAgentSettings) {
+    val effectiveConnectionUrl = settings.coral.connectionUrl
+    val effectiveModelProxyUrl = "${settings.coral.modelProxyUrl.trimEnd('/')}/openai"
+
     runBlocking {
         val executor: PromptExecutor =
-            settings.modelProvider.getExecutor(settings.modelProviderUrlOverride, settings.modelApiKey)
-        val llmModel = findKoogModelByName(settings.modelId)
+            getPromptExecutor(
+                settings.coral.modelProxyFormat,
+                effectiveModelProxyUrl)
 
-        println("Connecting to MCP server at ${settings.coral.connectionUrl}")
+        val llmModel =
+            findKoogModelByInfo(settings.coral.modelProxyModel, settings.coral.modelProxyProvider, settings.coral.modelProxyFormat)
+
+        println("Connecting to MCP server at $effectiveConnectionUrl")
+        println("Using LLM proxy at $effectiveModelProxyUrl")
 
         val coralMcpClient = try {
-            getMcpClientStreamableHttp(settings.coral.connectionUrl)
+            getMcpClientStreamableHttp(effectiveConnectionUrl)
         } catch (e: Throwable) {
             throw processCoralThrowable(e)
         }
@@ -60,7 +69,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
 
 
         val loopAgent = AIAgent.Companion(
-            systemPrompt = "", // This gets replaced later
+            systemPrompt = "", // This gets replaced later by updateSystemResources
             promptExecutor = executor,
             llmModel = llmModel,
             toolRegistry = combinedTools,
@@ -77,7 +86,7 @@ fun runAgent(settings: ResolvedAgentSettings) {
                             return@functionalStrategy
                         }
 
-                        if (i > 0 && settings.iterationDelayMs > 0) {
+                        if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
                             println("Waiting ${settings.iterationDelayMs}ms before next iteration...")
                             delay(settings.iterationDelayMs)
                         }
@@ -102,9 +111,11 @@ fun runAgent(settings: ResolvedAgentSettings) {
                         }
 
                         // For debugging: save the full prompt messages to a file
-                        llm.readSession {
-                            val file = File("agent_log.json")
-                            file.writeText(Json.encodeToString(prompt.messages))
+                        if(logLatestLlmRequestToLogFile) {
+                            llm.readSession {
+                                val file = File("agent_log.json")
+                                file.writeText(llmLogJson.encodeToString(prompt.messages))
+                            }
                         }
 
                         val tokens = latestTokenUsage()

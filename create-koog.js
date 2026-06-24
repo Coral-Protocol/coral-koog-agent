@@ -34,6 +34,11 @@ const ask = (query) => {
 async function main() {
     let targetDir = process.argv[2];
 
+    // Check if the first argument is actually an option instead of a target directory
+    if (targetDir && targetDir.startsWith('--')) {
+        targetDir = undefined;
+    }
+
     if (!targetDir) {
         console.log('\nLet\'s set up your new koog agent. We\'ll add give it CoralOS support out of the box.');
         targetDir = await ask('What is your project name? (e.g., my-cool-agent): ');
@@ -65,15 +70,57 @@ async function main() {
     console.log(`\n📦 Cloning template repository from ${TEMPLATE_REPO}...`);
     run(`git clone ${TEMPLATE_REPO} .`);
 
+    // Load version from package.json and attempt to checkout the corresponding tag
+    try {
+        const pkg = require(path.join(__dirname, 'package.json'));
+        const version = pkg.version;
+        if (version) {
+            const tagsToTry = [version, `v${version}`];
+            let checkedOut = false;
+            for (const tag of tagsToTry) {
+                try {
+                    // Try to checkout the tag silently
+                    execSync(`git checkout -q tags/${tag}`, { stdio: 'ignore' });
+                    console.log(`\n📌 Using template version ${tag}`);
+                    checkedOut = true;
+                    break;
+                } catch (e) {
+                    // Tag not found, try the next one
+                }
+            }
+            if (!checkedOut && !version.includes('SNAPSHOT')) {
+                console.log(`\n⚠️  Note: No git tag found for version ${version}, using latest from default branch.`);
+            }
+        }
+    } catch (err) {
+        // Silently continue if package.json cannot be read or version is missing
+    }
+
     console.log('\n🚀 Running hydration task...');
     const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 
     // Extract potential hydrate arguments from CLI
-    const hydrateArgs = process.argv.slice(3).join(' ');
+    // We want to pass everything after the script name that starts with -- OR follows an option starting with --
+    const hydrateArgs = [];
+    for (let i = 2; i < process.argv.length; i++) {
+        const arg = process.argv[i];
+        if (arg === targetDir && i === 2) continue; // Skip the project name if it was at index 2
+
+        if (arg.startsWith('--')) {
+            hydrateArgs.push(arg);
+            // If the next argument doesn't start with --, it might be the value for this option
+            if (i + 1 < process.argv.length && !process.argv[i + 1].startsWith('--')) {
+                hydrateArgs.push(process.argv[i + 1]);
+                i++;
+            }
+        }
+    }
+
+    const hydrateArgsStr = hydrateArgs.join(' ');
     
     // Automatically pass agentName if it's not already provided in args
     let autoArgs = '';
-    if (!hydrateArgs.includes('--agentName')) {
+    if (!hydrateArgsStr.includes('--agentName')) {
         const agentName = path.basename(fullPath);
         // Only pass if it looks like a valid kebab-case name to avoid immediate validation failure
         if (agentName.match(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/)) {
@@ -82,7 +129,7 @@ async function main() {
     }
 
     // Use --console=plain and -q to keep the output clean during interactive hydration
-    run(`${gradlew} -q hydrate --console=plain ${autoArgs} ${hydrateArgs}`);
+    run(`${gradlew} -q hydrate --console=plain ${autoArgs} ${hydrateArgsStr}`);
 
     console.log('\n✅ Project created and hydrated successfully!');
     console.log(`\nNext steps:

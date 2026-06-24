@@ -9,12 +9,16 @@ abstract class HydrateTemplateTask : DefaultTask() {
     companion object {
         const val TEMPLATE_PACKAGE = "ai.coralprotocol.coral.koog.fullexample"
         const val TEMPLATE_GROUP = "ai.coralprotocol"
-        const val TEMPLATE_AGENT_NAME = "koog-template-agents"
-        const val TEMPLATE_PROJECT_NAME = "koog-coral-agent"
+        const val TEMPLATE_AGENT_NAME = "coral-koog-agent"
+        const val TEMPLATE_PROJECT_NAME = "coral-koog-agent"
     }
 
     private var agentNameValue: String = ""
     private var packageNameValue: String = ""
+    private var keepWorkflowsValue: String = ""
+    private var keepPublishJvmValue: String = ""
+    private var keepPublishNativeValue: String = ""
+    private var keepReleasePleaseValue: String = ""
 
     @Option(option = "agentName", description = "Name for the agent (kebab-case, e.g. my-cool-agent)")
     fun setAgentName(value: String) {
@@ -24,6 +28,26 @@ abstract class HydrateTemplateTask : DefaultTask() {
     @Option(option = "packageName", description = "Java/Kotlin package name (e.g. com.example.myagent)")
     fun setPackageName(value: String) {
         packageNameValue = value
+    }
+
+    @Option(option = "keepWorkflows", description = "Whether to keep each GitHub workflow (true/false/prompt)")
+    fun setKeepWorkflows(value: String) {
+        keepWorkflowsValue = value
+    }
+
+    @Option(option = "keepPublishJvm", description = "Whether to keep the publish-jvm workflow (true/false)")
+    fun setKeepPublishJvm(value: String) {
+        keepPublishJvmValue = value
+    }
+
+    @Option(option = "keepPublishNative", description = "Whether to keep the publish-native workflow (true/false)")
+    fun setKeepPublishNative(value: String) {
+        keepPublishNativeValue = value
+    }
+
+    @Option(option = "keepReleasePlease", description = "Whether to keep the release-please workflow (true/false)")
+    fun setKeepReleasePlease(value: String) {
+        keepReleasePleaseValue = value
     }
 
     @TaskAction
@@ -42,9 +66,12 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateSettingsFile(rootDir, agentName)
         updateAgentManifest(rootDir, agentName)
         updateReadme(rootDir, agentName)
+        updateQuickSessionScript(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
+        manageWorkflows(rootDir)
         cleanCompiledOutput(rootDir)
         removeGitRemoteOrigin(rootDir)
+        gitCreateBranch(rootDir, "main")
         removeHydratorArtifacts(rootDir)
 
         logStep("Committing hydrated state")
@@ -60,8 +87,12 @@ abstract class HydrateTemplateTask : DefaultTask() {
     private fun logStart(agentName: String, packageName: String) {
         logger.quiet("")
         logger.quiet("Hydrating Coral Koog Agent Template")
-        logger.quiet("Agent name:   $agentName")
-        logger.quiet("Package name: $packageName")
+        logger.quiet("Agent name:    $agentName")
+        logger.quiet("Package name:  $packageName")
+        if (keepWorkflowsValue.isNotBlank()) logger.quiet("Keep workflows: $keepWorkflowsValue")
+        if (keepPublishJvmValue.isNotBlank()) logger.quiet("Keep publish-jvm: $keepPublishJvmValue")
+        if (keepPublishNativeValue.isNotBlank()) logger.quiet("Keep publish-native: $keepPublishNativeValue")
+        if (keepReleasePleaseValue.isNotBlank()) logger.quiet("Keep release-please: $keepReleasePleaseValue")
         logger.quiet("")
     }
 
@@ -118,6 +149,99 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
     }
 
+    private fun manageWorkflows(rootDir: File) {
+        val workflowsDir = rootDir.resolve(".github/workflows")
+        if (!workflowsDir.exists() || !workflowsDir.isDirectory) return
+
+        val workflows = workflowsDir.listFiles { f -> f.isFile && (f.extension == "yml" || f.extension == "yaml") } ?: return
+        if (workflows.isEmpty()) return
+
+        val globalKeep = parseKeepPolicy(keepWorkflowsValue.ifBlank {
+            project.findProperty("keepWorkflows")?.toString() ?: ""
+        })
+
+        if (globalKeep == null) {
+            logStep("GitHub workflows found. Specific options or prompting will be used.")
+        } else {
+            logStep("Managing GitHub workflows (global policy: ${if (globalKeep) "keep" else "remove"})")
+        }
+
+        workflows.sortedBy { it.name }.forEach { workflowFile ->
+            val specificKeep = when (workflowFile.name) {
+                "publish-jvm.yml" -> parseKeepPolicy(
+                    keepPublishJvmValue.ifBlank { project.findProperty("keepPublishJvm")?.toString() ?: "" }
+                )
+                "publish-native.yml" -> parseKeepPolicy(
+                    keepPublishNativeValue.ifBlank { project.findProperty("keepPublishNative")?.toString() ?: "" }
+                )
+                "release-please.yml" -> parseKeepPolicy(
+                    keepReleasePleaseValue.ifBlank { project.findProperty("keepReleasePlease")?.toString() ?: "" }
+                )
+                else -> null
+            }
+
+            val keep = specificKeep ?: globalKeep ?: promptKeepWorkflow(workflowFile.name)
+
+            if (!keep) {
+                logStep("Removing workflow: ${workflowFile.name}")
+                gitRemove(rootDir, ".github/workflows/${workflowFile.name}")
+                // In case it's not in git, or git rm failed to remove from disk
+                if (workflowFile.exists()) {
+                    workflowFile.delete()
+                }
+
+                if (workflowFile.name == "release-please.yml") {
+                    removeReleasePleaseConfig(rootDir)
+                }
+            }
+        }
+
+        // If .github/workflows is empty, remove it and .github if empty
+        val remainingWorkflows = workflowsDir.listFiles()
+        if (remainingWorkflows != null && remainingWorkflows.isEmpty()) {
+            logStep("Removing empty workflows directory")
+            workflowsDir.delete()
+            val githubDir = workflowsDir.parentFile
+            if (githubDir != null && githubDir.name == ".github" && githubDir.listFiles()?.isEmpty() == true) {
+                githubDir.delete()
+            }
+        }
+    }
+
+    private fun parseKeepPolicy(value: String): Boolean? {
+        return when (value.lowercase()) {
+            "true", "yes", "all", "keep" -> true
+            "false", "no", "none", "remove" -> false
+            else -> null
+        }
+    }
+
+    private fun removeReleasePleaseConfig(rootDir: File) {
+        logStep("Removing release-please configuration files")
+        val githubDir = rootDir.resolve(".github")
+        val configFiles = listOf("release-please-config.json", "release-please-manifest.json")
+        configFiles.forEach { fileName ->
+            val file = githubDir.resolve(fileName)
+            if (file.exists()) {
+                gitRemove(rootDir, ".github/$fileName")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        }
+    }
+
+    private fun promptKeepWorkflow(fileName: String): Boolean {
+        print("Keep workflow '$fileName'? [Y/n]: ")
+        System.out.flush()
+        val input = try {
+            System.console()?.readLine() ?: readlnOrNull()
+        } catch (_: Exception) {
+            null
+        }
+        return input.isNullOrBlank() || input.lowercase().startsWith("y")
+    }
+
     private fun updateReadme(rootDir: File, agentName: String) {
         logStep("Updating README.md")
         val prependixFile = rootDir.resolve("post-hydrate-readme-prependix.md")
@@ -153,6 +277,13 @@ abstract class HydrateTemplateTask : DefaultTask() {
             if (prependixFile.exists()) {
                 prependixFile.delete()
             }
+        }
+    }
+
+    private fun updateQuickSessionScript(rootDir: File, agentName: String) {
+        logStep("Updating scripts/quick-session.sh")
+        updateFile(rootDir.resolve("scripts/quick-session.sh")) { content ->
+            content.replace("AGENT_NAME=\${AGENT_NAME:-$TEMPLATE_AGENT_NAME}", "AGENT_NAME=\${AGENT_NAME:-$agentName}")
         }
     }
 
@@ -330,6 +461,27 @@ abstract class HydrateTemplateTask : DefaultTask() {
             }
         } catch (e: Exception) {
             logger.warn("Could not run 'git remote remove origin': ${e.message}")
+        }
+    }
+
+    private fun gitCreateBranch(rootDir: File, branchName: String) {
+        if (!rootDir.resolve(".git").exists()) return
+
+        try {
+            val process = ProcessBuilder("git", "checkout", "-B", branchName)
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+            val exitCode = process.waitFor()
+
+            if (exitCode == 0) {
+                logStep("Switched to branch '$branchName'")
+            } else {
+                val output = process.inputStream.bufferedReader().readText().trim()
+                logger.warn("Failed to checkout branch '$branchName': $output")
+            }
+        } catch (e: Exception) {
+            logger.warn("Could not run 'git checkout -B $branchName': ${e.message}")
         }
     }
 

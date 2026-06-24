@@ -1,393 +1,93 @@
 {
   "reflection": [
     {
-      "type": "ai.koog.agents.core.tools.annotations.LLMDescription"
-    },
-    {
-      "type": "ai.koog.agents.core.tools.annotations.Tool"
-    },
-    {
-      "type": "ai.koog.agents.core.tools.reflect.ToolSet"
-    },
-    {
-      "type": "ai.koog.prompt.executor.clients.LLModelDefinitions"
-    },
-    {
-      "type": "ai.koog.prompt.executor.clients.anthropic.AnthropicModels",
-      "methods": [
-        {
-          "name": "getHaiku_3",
-          "parameterTypes": []
-        },
-        {
-          "name": "getHaiku_3_5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getHaiku_4_5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getOpus_3",
-          "parameterTypes": []
-        },
-        {
-          "name": "getOpus_4",
-          "parameterTypes": []
-        },
-        {
-          "name": "getOpus_4_1",
-          "parameterTypes": []
-        },
-        {
-          "name": "getOpus_4_5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getSonnet_3_5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getSonnet_3_7",
-          "parameterTypes": []
-        },
-        {
-          "name": "getSonnet_4",
-          "parameterTypes": []
-        },
-        {
-          "name": "getSonnet_4_5",
-          "parameterTypes": []
-        }
-      ]
+      "type": "[Lio.ktor.network.selector.SelectInterest;"
     },
     {
       "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels"
     },
     {
       "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels$Chat",
-      "methods": [
+      "fields": [
         {
-          "name": "getGPT4_1",
-          "parameterTypes": []
+          "name": "GPT4_1"
         },
         {
-          "name": "getGPT4_1Mini",
-          "parameterTypes": []
+          "name": "GPT4_1Mini"
         },
         {
-          "name": "getGPT4_1Nano",
-          "parameterTypes": []
+          "name": "GPT4_1Nano"
         },
         {
-          "name": "getGPT4o",
-          "parameterTypes": []
+          "name": "GPT4o"
         },
         {
-          "name": "getGPT4oMini",
-          "parameterTypes": []
+          "name": "GPT4oMini"
         },
         {
-          "name": "getGPT5",
-          "parameterTypes": []
+          "name": "GPT5"
         },
         {
-          "name": "getGPT5Codex",
-          "parameterTypes": []
+          "name": "GPT5Codex"
         },
         {
-          "name": "getGPT5Mini",
-          "parameterTypes": []
+          "name": "GPT5Mini"
         },
         {
-          "name": "getGPT5Nano",
-          "parameterTypes": []
+          "name": "GPT5Nano"
         },
         {
-          "name": "getGPT5Pro",
-          "parameterTypes": []
+          "name": "GPT5Pro"
         },
         {
-          "name": "getGPT5_1",
-          "parameterTypes": []
+          "name": "GPT5_1"
         },
         {
-          "name": "getGPT5_1Codex",
-          "parameterTypes": []
+          "name": "GPT5_1Codex"
         },
         {
-          "name": "getGPT5_2",
-          "parameterTypes": []
+          "name": "GPT5_1CodexMax"
         },
         {
-          "name": "getGPT5_2Pro",
-          "parameterTypes": []
+          "name": "GPT5_2"
         },
         {
-          "name": "getO1",
-          "parameterTypes": []
+          "name": "GPT5_2Codex"
         },
         {
-          "name": "getO3",
-          "parameterTypes": []
+          "name": "GPT5_2Pro"
         },
         {
-          "name": "getO3Mini",
-          "parameterTypes": []
+          "name": "GPT5_3Codex"
         },
         {
-          "name": "getO4Mini",
-          "parameterTypes": []
+          "name": "GPT5_4"
+        },
+        {
+          "name": "GPT5_4Mini"
+        },
+        {
+          "name": "GPT5_4Nano"
+        },
+        {
+          "name": "GPT5_4Pro"
+        },
+        {
+          "name": "O1"
+        },
+        {
+          "name": "O3"
+        },
+        {
+          "name": "O3Mini"
+        },
+        {
+          "name": "O4Mini"
         }
       ]
-    },
-    {
-      "type": "ai.koog.prompt.executor.clients.openrouter.OpenRouterModels",
-      "methods": [
-        {
-          "name": "getClaude3Haiku",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3Opus",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3Sonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3VisionHaiku",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3VisionOpus",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3VisionSonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3_5Sonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude3_7Sonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude4Sonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude4_1Opus",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude4_5Haiku",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude4_5Opus",
-          "parameterTypes": []
-        },
-        {
-          "name": "getClaude4_5Sonnet",
-          "parameterTypes": []
-        },
-        {
-          "name": "getDeepSeekV30324",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT35Turbo",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT4",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT4Turbo",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT4o",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT4oMini",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5Chat",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5Mini",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5Nano",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5_2",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT5_2Pro",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGPT_OSS_120b",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGemini2_5Flash",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGemini2_5FlashLite",
-          "parameterTypes": []
-        },
-        {
-          "name": "getGemini2_5Pro",
-          "parameterTypes": []
-        },
-        {
-          "name": "getLlama3",
-          "parameterTypes": []
-        },
-        {
-          "name": "getLlama3Instruct",
-          "parameterTypes": []
-        },
-        {
-          "name": "getMistral7B",
-          "parameterTypes": []
-        },
-        {
-          "name": "getMixtral8x7B",
-          "parameterTypes": []
-        },
-        {
-          "name": "getPhi4Reasoning",
-          "parameterTypes": []
-        },
-        {
-          "name": "getQwen2_5",
-          "parameterTypes": []
-        },
-        {
-          "name": "getQwen3VL",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "ai.koog.prompt.llm.LLMCapability"
     },
     {
       "type": "ai.koog.prompt.llm.LLModel"
-    },
-    {
-      "type": "boolean",
-      "allDeclaredFields": true
-    },
-    {
-      "type": "com.sun.crypto.provider.AESCipher$General",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.ARCFOURCipher",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.DESCipher",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.DESedeCipher",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.DHParameters",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.GaloisCounterMode$AESGCM",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.HmacCore$HmacSHA384",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.TlsMasterSecretGenerator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "double",
-      "allDeclaredFields": true
-    },
-    {
-      "type": "int",
-      "allDeclaredFields": true
     },
     {
       "type": "io.ktor.client.HttpClient",
@@ -399,14 +99,6 @@
     },
     {
       "type": "io.ktor.client.HttpClientConfig"
-    },
-    {
-      "type": "io.ktor.client.call.HttpClientCall",
-      "fields": [
-        {
-          "name": "received"
-        }
-      ]
     },
     {
       "type": "io.ktor.client.content.ProgressListener"
@@ -426,21 +118,13 @@
       "type": "io.ktor.client.engine.HttpClientEngineConfig"
     },
     {
-      "type": "io.ktor.client.engine.apache5.Apache5EngineContainer"
+      "type": "io.ktor.client.engine.cio.CIOEngineContainer"
     },
     {
-      "type": "io.ktor.client.engine.apache5.ApacheRequestEntityProducer",
+      "type": "io.ktor.client.engine.cio.Endpoint",
       "fields": [
         {
-          "name": "waitingForContent"
-        }
-      ]
-    },
-    {
-      "type": "io.ktor.client.engine.apache5.ApacheResponseConsumer",
-      "fields": [
-        {
-          "name": "capacity"
+          "name": "connections"
         }
       ]
     },
@@ -460,13 +144,71 @@
       "type": "io.ktor.client.plugins.api.ClientPluginInstance"
     },
     {
-      "type": "io.ktor.client.plugins.sse.ClientSSESession"
-    },
-    {
       "type": "io.ktor.client.request.ResponseAdapter"
     },
     {
       "type": "io.ktor.http.ContentType"
+    },
+    {
+      "type": "io.ktor.network.selector.InterestSuspensionsMap",
+      "fields": [
+        {
+          "name": "acceptHandlerReference"
+        },
+        {
+          "name": "connectHandlerReference"
+        },
+        {
+          "name": "readHandlerReference"
+        },
+        {
+          "name": "writeHandlerReference"
+        }
+      ]
+    },
+    {
+      "type": "io.ktor.network.selector.LockFreeMPSCQueue",
+      "fields": [
+        {
+          "name": "curRef"
+        }
+      ]
+    },
+    {
+      "type": "io.ktor.network.selector.LockFreeMPSCQueueCore",
+      "fields": [
+        {
+          "name": "nextRef"
+        },
+        {
+          "name": "stateRef"
+        }
+      ]
+    },
+    {
+      "type": "io.ktor.network.selector.SelectableBase",
+      "fields": [
+        {
+          "name": "_interestedOps"
+        }
+      ]
+    },
+    {
+      "type": "io.ktor.network.sockets.SocketBase",
+      "fields": [
+        {
+          "name": "actualCloseFlag"
+        },
+        {
+          "name": "closeFlag"
+        },
+        {
+          "name": "readerJob"
+        },
+        {
+          "name": "writerJob"
+        }
+      ]
     },
     {
       "type": "io.ktor.serialization.kotlinx.json.KotlinxSerializationJsonExtensionProvider"
@@ -484,17 +226,6 @@
     },
     {
       "type": "io.ktor.util.reflect.TypeInfo"
-    },
-    {
-      "type": "io.ktor.utils.io.ByteChannel",
-      "fields": [
-        {
-          "name": "_closedCause"
-        },
-        {
-          "name": "suspensionSlot"
-        }
-      ]
     },
     {
       "type": "io.modelcontextprotocol.kotlin.sdk.client.Client",
@@ -518,23 +249,6 @@
         },
         {
           "name": "_responseHandlers"
-        }
-      ]
-    },
-    {
-      "type": "io.modelcontextprotocol.kotlin.sdk.types.JSONRPCNotification",
-      "fields": [
-        {
-          "name": "Companion"
-        }
-      ]
-    },
-    {
-      "type": "io.modelcontextprotocol.kotlin.sdk.types.JSONRPCNotification$Companion",
-      "methods": [
-        {
-          "name": "serializer",
-          "parameterTypes": []
         }
       ]
     },
@@ -573,23 +287,6 @@
       ]
     },
     {
-      "type": "io.modelcontextprotocol.kotlin.sdk.types.TextContent",
-      "fields": [
-        {
-          "name": "Companion"
-        }
-      ]
-    },
-    {
-      "type": "io.modelcontextprotocol.kotlin.sdk.types.TextContent$Companion",
-      "methods": [
-        {
-          "name": "serializer",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "java.io.Serializable"
     },
     {
@@ -608,50 +305,16 @@
       "type": "java.lang.ClassValue"
     },
     {
-      "type": "java.lang.Double"
-    },
-    {
       "type": "java.lang.Integer"
     },
     {
       "type": "java.lang.Object"
     },
     {
-      "type": "java.lang.String",
-      "fields": [
-        {
-          "name": "Companion"
-        }
-      ]
+      "type": "java.lang.String"
     },
     {
-      "type": "java.security.AlgorithmParametersSpi"
-    },
-    {
-      "type": "java.security.KeyStoreSpi"
-    },
-    {
-      "type": "java.security.interfaces.ECPrivateKey"
-    },
-    {
-      "type": "java.security.interfaces.ECPublicKey"
-    },
-    {
-      "type": "java.util.List"
-    },
-    {
-      "type": "java.util.Map"
-    },
-    {
-      "type": "javax.net.ssl.SSLParameters",
-      "methods": [
-        {
-          "name": "setEnableRetransmissions",
-          "parameterTypes": [
-            "boolean"
-          ]
-        }
-      ]
+      "type": "java.net.StandardSocketOptions"
     },
     {
       "type": "kotlin.Any"
@@ -661,9 +324,6 @@
     },
     {
       "type": "kotlin.Cloneable"
-    },
-    {
-      "type": "kotlin.Double"
     },
     {
       "type": "kotlin.Function2"
@@ -729,15 +389,6 @@
       "type": "kotlin.collections.Map"
     },
     {
-      "type": "kotlin.collections.MutableList"
-    },
-    {
-      "type": "kotlin.collections.MutableMap"
-    },
-    {
-      "type": "kotlin.jvm.functions.Function2"
-    },
-    {
       "type": "kotlin.jvm.internal.DefaultConstructorMarker"
     },
     {
@@ -795,14 +446,6 @@
       "fields": [
         {
           "name": "_handled$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.DispatchedCoroutine",
-      "fields": [
-        {
-          "name": "_decision$volatile"
         }
       ]
     },
@@ -1001,14 +644,6 @@
       ]
     },
     {
-      "type": "kotlinx.coroutines.sync.MutexImpl",
-      "fields": [
-        {
-          "name": "owner$volatile"
-        }
-      ]
-    },
-    {
       "type": "kotlinx.coroutines.sync.SemaphoreAndMutexImpl",
       "fields": [
         {
@@ -1025,45 +660,6 @@
         },
         {
           "name": "tail$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.io.Source"
-    },
-    {
-      "type": "sun.security.pkcs12.PKCS12KeyStore",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.DSA$SHA224withDSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.DSA$SHA256withDSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
         }
       ]
     },
@@ -1086,255 +682,6 @@
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "sun.security.provider.SHA2$SHA224",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.SHA2$SHA256",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.SHA5$SHA384",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.SHA5$SHA512",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.X509Factory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.certpath.PKIXCertPathValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.rsa.PSSParameters",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.rsa.RSAKeyFactory$Legacy",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.rsa.RSAPSSSignature",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.rsa.RSASignature$SHA224withRSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.ssl.KeyManagerFactoryImpl$SunX509",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.ssl.SSLContextImpl$DefaultSSLContext",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.ssl.TrustManagerFactoryImpl$PKIXFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.AuthorityInfoAccessExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.AuthorityKeyIdentifierExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.BasicConstraintsExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.CRLDistributionPointsExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.CertificatePoliciesExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.ExtendedKeyUsageExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.KeyUsageExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.NetscapeCertTypeExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.PrivateKeyUsageExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.SubjectAlternativeNameExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
     }
   ],
   "resources": [
@@ -1345,13 +692,7 @@
       "glob": "META-INF/services/io.ktor.serialization.kotlinx.KotlinxSerializationExtensionProvider"
     },
     {
-      "glob": "META-INF/services/java.lang.System$LoggerFinder"
-    },
-    {
       "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
-    },
-    {
-      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
     },
     {
       "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
@@ -1369,34 +710,16 @@
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
-      "glob": "kotlin/collections/collections.kotlin_builtins"
+      "glob": "kotlin/time/time.kotlin_builtins"
     },
     {
       "glob": "kotlin/kotlin.kotlin_builtins"
     },
     {
-      "glob": "kotlin/time/time.kotlin_builtins"
-    },
-    {
-      "glob": "org/apache/hc/client5/version.properties"
-    },
-    {
-      "glob": "org/publicsuffix/list/effective_tld_names.dat"
+      "glob": "kotlin/collections/collections.kotlin_builtins"
     },
     {
       "glob": "org/slf4j/impl/StaticLoggerBinder.class"
-    },
-    {
-      "module": "java.base",
-      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
-    },
-    {
-      "module": "java.base",
-      "glob": "jdk/internal/icu/impl/data/icudt76b/uprops.icu"
-    },
-    {
-      "module": "java.base",
-      "glob": "sun/net/idn/uidna.spp"
     }
   ],
   "bundles": [],
