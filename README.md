@@ -13,7 +13,7 @@ npm create koog <my-cool-agent>
 ```
 You can also pass hydration options (see below):
 ```bash
-npm create koog <my-cool-agent> --enableTunnel=true
+npm create koog <my-cool-agent> --packageName=com.example.myagent
 ```
 or just:
 ```bash
@@ -38,7 +38,6 @@ Alternatively, you can provide these (and other options) as arguments:
 ### Hydration Options
 - `--agentName`: Name for the agent (kebab-case, e.g., `my-cool-agent`).
 - `--packageName`: Java/Kotlin package name (e.g., `com.example.myagent`).
-- `--enableTunnel`: Whether to enable tunnel functionality (default: `false`).
 
 ### What hydration does:
 - Updates `build.gradle.kts`, `settings.gradle.kts`, and `coral-agent.toml` with your project info.

@@ -2,7 +2,6 @@ package ai.coralprotocol.coral.koog.fullexample
 
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
-import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.TunnelSettings //{CORALIZER:TUNNEL_IMPORT}
 
 /**
  * Minimal config loader that reads values from environment variables or a dev env file.
@@ -46,18 +45,6 @@ data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
     val iterationDelayMs = env.get("ITERATION_DELAY_MS").toInt().milliseconds
 
     val coral = CoralSettings(env)
-
-    // {CORALIZER:TUNNEL_PROPERTY_START}
-    /** Non-null when this agent is being tunneled through a cloud wrapper. */
-    val tunnel: TunnelSettings? by lazy {
-        val url = env.getOptional("TUNNEL_SERVER_URL")?.takeIf { it.isNotBlank() }
-        val uuid = env.getOptional("TUNNEL_UUID")?.takeIf { it.isNotBlank() }
-        val key = env.getOptional("TUNNEL_PUBLIC_KEY")?.takeIf { it.isNotBlank() }
-        if (url != null && uuid != null && key != null) {
-            TunnelSettings(serverUrl = url, uuid = uuid, publicKey = key)
-        } else null
-    }
-    // {CORALIZER:TUNNEL_PROPERTY_END}
 }
 
 interface EnvironmentOptionProvider {

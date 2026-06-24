@@ -1,7 +1,5 @@
 package ai.coralprotocol.coral.koog.fullexample
 
-import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.rewriteUrlForTunnel //{CORALIZER:TUNNEL_IMPORT}
-import ai.coralprotocol.coral.koog.fullexample.util.coral.tunnel.startAgentAdjacentTunnelProxy //{CORALIZER:TUNNEL_IMPORT}
 import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
 import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
@@ -17,7 +15,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.uuid.ExperimentalUuidApi
 private val logLatestLlmRequestToLogFile = true
 private val llmLogJson = Json {
     prettyPrint = true
@@ -43,34 +40,9 @@ fun main() {
     runAgent(settings)
 }
 
-@OptIn(ExperimentalUuidApi::class)
 fun runAgent(settings: ResolvedAgentSettings) {
-    // {CORALIZER:TUNNEL_START}
-    // If tunnel settings are present, start the agent-adjacent tunnel proxy
-    // and rewrite the Coral URLs to go through it.
-    val tunnel = settings.tunnel
-    val effectiveConnectionUrl: String
-    val effectiveModelProxyUrl: String
-
-    if (tunnel != null) {
-        println("[ProxyConsumer] Tunnel mode detected, starting agent-adjacent tunnel proxy...")
-        val proxyInfo = startAgentAdjacentTunnelProxy(
-            tunnelSettings = tunnel,
-            agentSecret = settings.coral.agentSecret
-        )
-        effectiveConnectionUrl = rewriteUrlForTunnel(
-            settings.coral.connectionUrl, settings.coral.apiUrl, proxyInfo.localBaseUrl, settings.coral.agentSecret
-        )
-        effectiveModelProxyUrl = rewriteUrlForTunnel(
-            settings.coral.modelProxyUrl, settings.coral.apiUrl, proxyInfo.localBaseUrl, settings.coral.agentSecret
-        )
-        println("[ProxyConsumer] Rewritten connection URL: $effectiveConnectionUrl")
-        println("[ProxyConsumer] Rewritten LLM proxy URL: $effectiveModelProxyUrl")
-    } else {
-        effectiveConnectionUrl = settings.coral.connectionUrl
-        effectiveModelProxyUrl = settings.coral.modelProxyUrl + "/openai"
-    }
-    // {CORALIZER:TUNNEL_END}
+    val effectiveConnectionUrl = settings.coral.connectionUrl
+    val effectiveModelProxyUrl = "${settings.coral.modelProxyUrl.trimEnd('/')}/openai"
 
     runBlocking {
         val executor: PromptExecutor =
@@ -81,7 +53,8 @@ fun runAgent(settings: ResolvedAgentSettings) {
         val llmModel =
             findKoogModelByInfo(settings.coral.modelProxyModel, settings.coral.modelProxyProvider, settings.coral.modelProxyFormat)
 
-        println("Connecting to MCP server at ${effectiveModelProxyUrl}")
+        println("Connecting to MCP server at $effectiveConnectionUrl")
+        println("Using LLM proxy at $effectiveModelProxyUrl")
 
         val coralMcpClient = try {
             getMcpClientStreamableHttp(effectiveConnectionUrl)
