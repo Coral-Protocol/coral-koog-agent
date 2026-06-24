@@ -9,15 +9,6 @@ To learn more about CoralOS, check out [docs.coralos.ai](https://docs.coralos.ai
 ### During development
 To run this agent, you'll need to first run the coral server and ensure it's configured to have this agent:
 
-<details>
-<summary>Running server with just this agent</summary>
-
-You can quickly run a server with just this agent by running:
-```bash
-npx coralos-dev@latest server start -- --auth.keys=dev --registry.local-agents="$(PWD)"
-```
-</details>
-
 ### Running via a local coral server installation
 You can link this agent to your "agent home" directory, which will make it available to any coral server running on your machine:
 
