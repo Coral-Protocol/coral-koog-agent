@@ -3,6 +3,7 @@ package ai.coralprotocol.coral.koog.fullexample
 import ai.coralprotocol.coral.koog.fullexample.util.coral.buildSystemPrompt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -44,5 +45,12 @@ class AgentConfigTest {
         val lines = values.map { (key, value) -> devEnvLine(key, value) }
         assertEquals(2, lines.size)
         assertEquals(values, parseDevEnv(lines))
+    }
+
+    @Test
+    fun `a hand-edited dev env value explains the expected format without echoing it`() {
+        val error = assertFailsWith<IllegalArgumentException> { parseDevEnv(listOf("CORAL_AGENT_SECRET=not-json")) }
+        assertTrue("CORAL_AGENT_SECRET" in error.message!!)
+        assertFalse("not-json" in error.message!!)
     }
 }

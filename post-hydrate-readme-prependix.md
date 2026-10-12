@@ -41,7 +41,9 @@ To debug the agent from your IDE while it takes part in a real session:
 - **Budgets**: token usage is reported as `LLM_TOKENS` claims (`[[claims]]` in `coral-agent.toml`). Applications set the price and the budget per session; the agent stops when the budget runs out.
 
 ### LLM formats
-The agent uses the format each LLM proxy reports: OpenAI, Anthropic or DeepSeek. Coral Server 1.4.0 reports Anthropic proxies as OpenAI and has no DeepSeek format, so use a newer server for those.
+Each `[[llm.proxies]]` entry in `coral-agent.toml` declares a `format.type`: `OpenAI`, `Anthropic` or `DeepSeek`. Coral Server only routes a proxy to providers of that format, and the agent uses the matching Koog client. Coral Cloud serves OpenAI and DeepSeek models.
+
+Anthropic and DeepSeek proxies need Coral Server 1.5.0 or newer.
 
 OpenAI-format requests use the Chat Completions API, where GPT-5.1 and newer only accept tools with reasoning turned off. That is the `REASONING_EFFORT` option's default (`none`); set it to `minimal` or higher for gpt-5 and o-series models, or `default` to leave it to the provider.
 

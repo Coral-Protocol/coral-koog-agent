@@ -11,6 +11,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         const val TEMPLATE_GROUP = "ai.coralprotocol"
         const val TEMPLATE_AGENT_NAME = "coral-koog-agent"
         const val TEMPLATE_PROJECT_NAME = "coral-koog-agent"
+        const val INITIAL_AGENT_VERSION = "0.1.0"
     }
 
     private var agentNameValue: String = ""
@@ -68,6 +69,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateReadme(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
         manageWorkflows(rootDir)
+        updateReleasePleaseConfig(rootDir)
         cleanCompiledOutput(rootDir)
         removeHydratorArtifacts(rootDir)
         startFreshGitHistory(rootDir)
@@ -127,6 +129,8 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateFile(rootDir.resolve("coral-agent.toml")) { content ->
             content
                 .replace("name = \"$TEMPLATE_AGENT_NAME\"", "name = \"$agentName\"")
+                // The new agent starts its own version history rather than inheriting the template's
+                .replaceFirst(Regex("^version = \"[^\"]*\"", RegexOption.MULTILINE), "version = \"$INITIAL_AGENT_VERSION\"")
                 .replace(
                     "summary = \"A template agent built with Koog (Kotlin).\"",
                     "summary = \"A Coral agent built with Koog (Kotlin).\""
@@ -211,6 +215,25 @@ abstract class HydrateTemplateTask : DefaultTask() {
             "true", "yes", "all", "keep" -> true
             "false", "no", "none", "remove" -> false
             else -> null
+        }
+    }
+
+    /**
+     * If release-please was kept, version the new agent from [INITIAL_AGENT_VERSION], and stop updating package.json,
+     * which only exists for the template's npm package and is removed by hydration.
+     */
+    private fun updateReleasePleaseConfig(rootDir: File) {
+        val githubDir = rootDir.resolve(".github")
+        val manifest = githubDir.resolve("release-please-manifest.json")
+        if (!manifest.exists()) return
+
+        logStep("Updating release-please configuration")
+        manifest.writeText("{\n  \".\": \"$INITIAL_AGENT_VERSION\"\n}\n")
+        updateFile(githubDir.resolve("release-please-config.json")) { content ->
+            content.replace(
+                Regex(""",\s*\{\s*"type": "json",\s*"path": "package.json",\s*"jsonpath": "\$\.version"\s*}"""),
+                ""
+            )
         }
     }
 
@@ -437,8 +460,25 @@ abstract class HydrateTemplateTask : DefaultTask() {
 
     /**
      * The new agent is its own project: replace the template's history (and its remote) with a fresh repository.
+     *
+     * Only a plain clone of the template is replaced. A repository with another origin (e.g. one created from the
+     * template on GitHub) or with commits of its own keeps its history, and hydration adds a commit to it.
      */
     private fun startFreshGitHistory(rootDir: File) {
+        if (rootDir.resolve(".git").exists()) {
+            val origin = gitOutput(rootDir, "remote", "get-url", "origin")
+            if (origin == null || !isTemplateRemote(origin)) {
+                logStep("Keeping the existing git history: its origin (${origin ?: "none"}) isn't the template repository")
+                return
+            }
+
+            val ownCommits = gitOutput(rootDir, "rev-list", "--count", "HEAD", "--not", "--remotes=origin")
+            if (ownCommits != "0") {
+                logStep("Keeping the existing git history: it has commits that aren't in the template repository")
+                return
+            }
+        }
+
         logStep("Starting a fresh git repository on branch main")
         rootDir.resolve(".git").deleteRecursively()
         try {
@@ -451,6 +491,22 @@ abstract class HydrateTemplateTask : DefaultTask() {
         } catch (e: Exception) {
             logger.warn("Could not run 'git init': ${e.message}")
         }
+    }
+
+    /** Matches https and ssh URLs of the template repository, with or without a trailing `.git`. */
+    private fun isTemplateRemote(url: String): Boolean =
+        url.trim().lowercase().trimEnd('/').removeSuffix(".git").endsWith("coral-protocol/coral-koog-agent")
+
+    /** Runs a git command and returns its trimmed stdout, or null if it fails. */
+    private fun gitOutput(rootDir: File, vararg args: String): String? = try {
+        val process = ProcessBuilder("git", *args)
+            .directory(rootDir)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+        val output = process.inputStream.bufferedReader().readText().trim()
+        if (process.waitFor() == 0) output else null
+    } catch (e: Exception) {
+        null
     }
 
     private fun gitMove(rootDir: File, source: File, target: File) {

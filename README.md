@@ -45,11 +45,11 @@ cd my-cool-agent
 - Updates `build.gradle.kts`, `settings.gradle.kts`, `coral-agent.toml` and this README with your project info.
 - Moves the sources to your package.
 - Removes the hydrator itself (`buildSrc`, `package.json`, `create-koog.js` and the `hydrate` task).
-- Starts a fresh git repository on `main` with one commit.
+- Starts a fresh git repository on `main` with one commit, replacing the template's history. A repository that isn't a plain clone of the template, such as one created from it on GitHub, keeps its history and gets one new commit.
 
 ## Requirements
 - JDK 25. If it isn't installed, Gradle downloads it on first build.
 - Git
-- Coral Server 1.4.0 or newer to run the agent in (see the [quickstart](https://docs.coralos.ai/guides/quickstart)). Building the server from source needs its own JDK (24).
+- Coral Server 1.5.0 or newer to run the agent in (see the [quickstart](https://docs.coralos.ai/guides/quickstart)). 1.4.0 also works, but only with OpenAI-format LLM proxies. Building the server from source needs its own JDK (24).
 - (Optional) Node.js/NPM, for `npm create koog` and `coralizer`
 - (Optional) Docker, for the docker runtime and image builds

@@ -55,12 +55,11 @@ fun resolveModel(format: ProxyFormat, id: String): LLModel {
  * authenticates the agent, and the server attaches the real provider key.
  */
 fun getPromptExecutor(format: ProxyFormat, proxyUrl: String): PromptExecutor {
-    // A trailing slash makes Koog's relative request paths append to the proxy URL instead of replacing its last segment
-    val baseUrl = proxyUrl.trimEnd('/') + "/"
+    // Koog's HTTP client ends the base URL with a slash, so its request paths are appended to the proxy URL
     val client = when (format) {
-        ProxyFormat.OPENAI -> OpenAILLMClient(apiKey = "", settings = OpenAIClientSettings(baseUrl = baseUrl))
-        ProxyFormat.ANTHROPIC -> AnthropicLLMClient(apiKey = "", settings = AnthropicClientSettings(baseUrl = baseUrl))
-        ProxyFormat.DEEPSEEK -> DeepSeekLLMClient(apiKey = "", settings = DeepSeekClientSettings(baseUrl = baseUrl))
+        ProxyFormat.OPENAI -> OpenAILLMClient(apiKey = "", settings = OpenAIClientSettings(baseUrl = proxyUrl))
+        ProxyFormat.ANTHROPIC -> AnthropicLLMClient(apiKey = "", settings = AnthropicClientSettings(baseUrl = proxyUrl))
+        ProxyFormat.DEEPSEEK -> DeepSeekLLMClient(apiKey = "", settings = DeepSeekClientSettings(baseUrl = proxyUrl))
     }
     return MultiLLMPromptExecutor(client)
 }

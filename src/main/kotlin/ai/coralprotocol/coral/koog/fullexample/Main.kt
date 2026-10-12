@@ -68,91 +68,93 @@ fun runAgent(settings: ResolvedAgentSettings) {
             throw processCoralThrowable(e)
         }
 
-        val combinedTools = getToolRegistry(coralToolRegistry(coralMcpClient))
-        println("Available tools: ${combinedTools.tools.joinToString { it.name }}")
+        try {
+            val combinedTools = getToolRegistry(coralToolRegistry(coralMcpClient))
+            println("Available tools: ${combinedTools.tools.joinToString { it.name }}")
 
-        ClaimHandler(settings.coral).use { claims ->
-            val loopAgent = AIAgent(
-                promptExecutor = executor,
-                agentConfig = AIAgentConfig(
-                    // The system prompt is set each iteration by updateSystemResources
-                    prompt = prompt("coral-agent", params = llmParams(format, llmModel, settings.reasoningEffort)) {},
-                    model = llmModel,
-                    maxAgentIterations = settings.maxIterations,
-                ),
-                toolRegistry = combinedTools,
-                strategy = functionalStrategy<Unit, Unit> {
-                    var totalTokens = 0L
+            ClaimHandler(settings.coral).use { claims ->
+                val loopAgent = AIAgent(
+                    promptExecutor = executor,
+                    agentConfig = AIAgentConfig(
+                        // The system prompt is set each iteration by updateSystemResources
+                        prompt = prompt("coral-agent", params = llmParams(format, llmModel, settings.reasoningEffort)) {},
+                        model = llmModel,
+                        maxAgentIterations = settings.maxIterations,
+                    ),
+                    toolRegistry = combinedTools,
+                    strategy = functionalStrategy<Unit, Unit> {
+                        var totalTokens = 0L
 
-                    repeat(settings.maxIterations) { i ->
-                        try {
-                            if (totalTokens >= settings.maxTokens) {
-                                println("Max tokens reached: $totalTokens >= ${settings.maxTokens}")
-                                return@functionalStrategy
-                            }
+                        repeat(settings.maxIterations) { i ->
+                            try {
+                                if (totalTokens >= settings.maxTokens) {
+                                    println("Max tokens reached: $totalTokens >= ${settings.maxTokens}")
+                                    return@functionalStrategy
+                                }
 
-                            if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
-                                println("Waiting ${settings.iterationDelayMs} before next iteration...")
-                                delay(settings.iterationDelayMs)
-                            }
+                                if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
+                                    println("Waiting ${settings.iterationDelayMs} before next iteration...")
+                                    delay(settings.iterationDelayMs)
+                                }
 
-                            // Refresh coral://instruction and coral://state so the system prompt reflects the session as it is now
-                            updateSystemResources(coralMcpClient, settings)
-                            val response = requestLLMOnlyCallingTools(
-                                if (i == 0) buildInitialUserMessage(settings) else settings.followUpUserPrompt
-                            )
+                                // Refresh coral://instruction and coral://state so the system prompt reflects the session as it is now
+                                updateSystemResources(coralMcpClient, settings)
+                                val response = requestLLMOnlyCallingTools(
+                                    if (i == 0) buildInitialUserMessage(settings) else settings.followUpUserPrompt
+                                )
 
-                            val toolCalls = getToolCalls(response)
-                            println("Iteration $i: ${response.textContent().ifBlank { "(no text)" }} | tool calls: ${toolCalls.joinToString { it.tool }}")
+                                val toolCalls = getToolCalls(response)
+                                println("Iteration $i: ${response.textContent().ifBlank { "(no text)" }} | tool calls: ${toolCalls.joinToString { it.tool }}")
 
-                            val toolResults = executeMultipleToolsCatching(toolCalls)
-                            llm.writeSession {
-                                appendPrompt {
-                                    user {
-                                        toolResults.forEach { toolResult(it.toMessagePart()) }
+                                val toolResults = executeMultipleToolsCatching(toolCalls)
+                                llm.writeSession {
+                                    appendPrompt {
+                                        user {
+                                            toolResults.forEach { toolResult(it.toMessagePart()) }
+                                        }
                                     }
                                 }
-                            }
 
-                            // For debugging: save the full prompt messages to a file
-                            if (logLatestLlmRequestToLogFile) {
-                                llm.readSession {
-                                    File("agent_log.json").writeText(llmLogJson.encodeToString(prompt.messages))
+                                // For debugging: save the full prompt messages to a file
+                                if (logLatestLlmRequestToLogFile) {
+                                    llm.readSession {
+                                        File("agent_log.json").writeText(llmLogJson.encodeToString(prompt.messages))
+                                    }
                                 }
-                            }
 
-                            // The latest request's usage is roughly the size of the conversation so far
-                            val contextTokens = latestTokenUsage().toLong()
-                            totalTokens += contextTokens
-                            if (claimTokens(claims, contextTokens).shouldExit) {
-                                println("Budget exhausted, stopping")
+                                // The latest request's usage is roughly the size of the conversation so far
+                                val contextTokens = latestTokenUsage().toLong()
+                                totalTokens += contextTokens
+                                if (claimTokens(claims, contextTokens)) {
+                                    println("Budget exhausted, stopping")
+                                    return@functionalStrategy
+                                }
+
+                                if (settings.contextCompressionTokens in 1..contextTokens) {
+                                    compressContext(contextTokens)
+                                    val compressionTokens = latestTokenUsage().toLong()
+                                    totalTokens += compressionTokens
+                                    if (claimTokens(claims, compressionTokens)) return@functionalStrategy
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: ClaimError) {
+                                // Stop rather than keep doing work that can't be paid for
+                                println("Claim failed (${e.statusCode}): ${e.body}")
                                 return@functionalStrategy
+                            } catch (e: Exception) {
+                                println("Error during agent iteration: ${e.message}")
+                                e.printStackTrace()
                             }
-
-                            if (settings.contextCompressionTokens in 1..contextTokens) {
-                                compressContext(contextTokens)
-                                val compressionTokens = latestTokenUsage().toLong()
-                                totalTokens += compressionTokens
-                                if (claimTokens(claims, compressionTokens).shouldExit) return@functionalStrategy
-                            }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: ClaimError) {
-                            // Stop rather than keep doing work that can't be paid for
-                            println("Claim failed (${e.statusCode}): ${e.body}")
-                            return@functionalStrategy
-                        } catch (e: Exception) {
-                            println("Error during agent iteration: ${e.message}")
-                            e.printStackTrace()
                         }
                     }
-                }
-            )
+                )
 
-            loopAgent.run(Unit)
+                loopAgent.run(Unit)
+            }
+        } finally {
+            coralMcpClient.close()
         }
-
-        coralMcpClient.close()
     }
 }
 
@@ -168,9 +170,15 @@ private suspend fun AIAgentFunctionalContext.compressContext(contextTokens: Long
     compressHistory(HistoryCompressionStrategy.WholeHistory)
 }
 
-private suspend fun claimTokens(claims: ClaimHandler, tokens: Long): ClaimResult {
-    val result = claims.claim(TOKEN_CLAIM_TYPE, tokens.coerceIn(0, UInt.MAX_VALUE.toLong()).toUInt())
+/**
+ * Claims [tokens] as LLM_TOKENS and returns true if the budget is exhausted and the agent should stop.
+ */
+private suspend fun claimTokens(claims: ClaimHandler, tokens: Long): Boolean {
+    // Nothing to charge; Coral Server would only log a warning for a zero-cost claim
+    if (tokens <= 0) return false
+
+    val result = claims.claim(TOKEN_CLAIM_TYPE, tokens.coerceAtMost(UInt.MAX_VALUE.toLong()).toUInt())
     if (result.fulfilledAmount < result.requestedAmount)
         println("Claimed ${result.fulfilledAmount} of ${result.requestedAmount} micro cents; remaining agent budget ${result.remainingAgentBudget}")
-    return result
+    return result.shouldExit
 }

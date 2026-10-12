@@ -3,16 +3,17 @@
     ".": {
       "package-name": "coral-koog-agent",
       "release-type": "simple",
+      "include-component-in-tag": false,
       "extra-files": [
         {
-          "type": "regex",
+          "type": "toml",
           "path": "coral-agent.toml",
-          "regex": [
-            {
-              "pattern": "version = \"[^\"]*\"",
-              "replacement": "version = \"$VERSION\""
-            }
-          ]
+          "jsonpath": "$.agent.version"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
         }
       ]
     }

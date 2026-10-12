@@ -1,5 +1,6 @@
 package ai.coralprotocol.coral.koog.fullexample
 
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
@@ -63,8 +64,18 @@ fun devEnvLine(key: String, value: String): String = "$key=${Json.encodeToString
 fun parseDevEnv(lines: List<String>): Map<String, String> = lines
     .filter { it.contains("=") && !it.startsWith("#") }
     .associate { line ->
-        val (key, value) = line.split("=", limit = 2)
-        key.trim() to Json.decodeFromString<String>(value.trim())
+        val (rawKey, value) = line.split("=", limit = 2)
+        val key = rawKey.trim()
+        val decoded = try {
+            Json.decodeFromString<String>(value.trim())
+        } catch (e: SerializationException) {
+            // The value isn't echoed: it may be the agent secret
+            throw IllegalArgumentException(
+                "coral-agent.dev.env: the value of $key must be a JSON string, e.g. $key=\"value\". " +
+                        "Recreate the file with the DEV_CAPTURE_ENV option rather than editing it by hand.", e
+            )
+        }
+        key to decoded
     }
 
 interface EnvironmentOptionProvider {

@@ -11,6 +11,12 @@ cd "$(dirname "$0")/.."
 CORAL_BASE_URL=${CORAL_BASE_URL:-localhost:5555}
 CORAL_BEARER_TOKEN=${CORAL_BEARER_TOKEN:-dev}
 DEV_CAPTURE_ENV=${DEV_CAPTURE_ENV:-false}
+# Spliced into the JSON body as a bool, so only accept values that map to one
+case "${DEV_CAPTURE_ENV}" in
+  true|1) DEV_CAPTURE_ENV=true ;;
+  false|0) DEV_CAPTURE_ENV=false ;;
+  *) echo "DEV_CAPTURE_ENV must be true or false, got: ${DEV_CAPTURE_ENV}" >&2; exit 1 ;;
+esac
 DEFAULT_EXTRA_INITIAL_USER_PROMPT="create a new thread and say hello in it, then share your most unique ideas every 60s"
 
 # The registry identifies agents by the exact name and version in coral-agent.toml
@@ -21,7 +27,8 @@ AGENT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' coral-agent.toml | head -n 1
 if [ -z "${EXTRA_INITIAL_USER_PROMPT+x}" ]; then
   printf "What should the agent's main goal be?\n"
   printf "(This sets EXTRA_INITIAL_USER_PROMPT. Press Enter to use default: %s)\n" "${DEFAULT_EXTRA_INITIAL_USER_PROMPT}"
-  read -r USER_MAIN_GOAL
+  # read fails on end of input (e.g. no terminal); fall back to the default rather than exiting under set -e
+  read -r USER_MAIN_GOAL || USER_MAIN_GOAL=""
   EXTRA_INITIAL_USER_PROMPT=${USER_MAIN_GOAL:-${DEFAULT_EXTRA_INITIAL_USER_PROMPT}}
 fi
 

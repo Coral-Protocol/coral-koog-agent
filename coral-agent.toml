@@ -98,6 +98,8 @@ display.multiline = true
 # =====================================================================================
 # LLM
 # =====================================================================================
+# format.type is "OpenAI", "Anthropic" or "DeepSeek". Coral Server routes each proxy to a provider of that format,
+# and the agent uses the matching Koog client. Anthropic and DeepSeek need Coral Server 1.5.0 or newer.
 [[llm.proxies]]
 name = "LLM_FAST"
 format.type = "OpenAI"
