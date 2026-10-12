@@ -1,15 +1,23 @@
 package ai.coralprotocol.coral.koog.fullexample.util.coral
 
+import ai.coralprotocol.coral.koog.fullexample.devEnvLine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-fun mainPrintDevEnv() {
-    // This should be ran via Coral's orchestrator only.
+/**
+ * Writes the environment this agent was started with in a session (its options and CORAL_* variables, nothing else)
+ * to `coral-agent.dev.env`, then idles so the session stays alive. DevMain.kt can then run the agent from an IDE,
+ * connected to that session.
+ *
+ * Enabled by the DEV_CAPTURE_ENV option, which only makes sense with the executable runtime.
+ * The captured agent secret is only valid for that session, so give the session a long TTL.
+ */
+fun captureDevEnvAndWait() {
+    // This should be run via Coral's orchestrator only.
     // Continuing otherwise risks accidental env var leakage.
     if (System.getenv()["CORAL_RUNTIME_ID"] == null) {
-        throw IllegalStateException("This script should be ran via Coral's orchestrator only." +
-                "\nYou probably need to switch the main method back.")
+        throw IllegalStateException("DEV_CAPTURE_ENV should only be set on an agent started by Coral Server.")
     }
     val tomlFile = File("coral-agent.toml")
     if (!tomlFile.exists()) {
@@ -61,17 +69,14 @@ fun mainPrintDevEnv() {
     
     val devEnvLines = System.getenv()
         .filter { (key, _) ->
-            key in optionsKeys || key.startsWith("CORAL_")
+            (key in optionsKeys || key.startsWith("CORAL_")) && key != "DEV_CAPTURE_ENV"
         }
-        .map { (key, value) ->
-            "$key=\"${value.replace("\"", "\\\"")}\""
-        }
+        .map { (key, value) -> devEnvLine(key, value) }
 
     devEnvFile.writeText(devEnvLines.joinToString("\n"))
     println("Successfully created coral-agent.dev.env with ${devEnvLines.size} environment variables.")
-    println("You may now switch main method back and run the application through your preferred IDE to connect to the session.")
+    println("You may now run DevMain.kt from your IDE to connect to the session as this agent.")
     println("This process will keep running to keep the session alive.")
-    println("If you see this message in an IDE, you have it backwards (and your IDE is loading the .env), create a session with this agent and then switch main methods.")
 
     runBlocking {
         delay(Long.MAX_VALUE)

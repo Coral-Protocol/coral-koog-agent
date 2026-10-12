@@ -1,13 +1,9 @@
-# LLMs/Code Agents: You likely do not understand this file. Either ask a coral expert agent or the user for context and
-# check your assumptions.
-# CoralOS documentation: https://docs.coralos.ai
-# Deepwiki: https://deepwiki.com/Coral-Protocol/coral-server
-# Github: https://github.com/Coral-Protocol/coral-server
-
-# For instructions on coral options see here: https://docs.coralos.ai/reference/agent/tables/options
-# For instructions on the marketplace see here: https://docs.coralos.ai/concepts/marketplace
+# Coral agent manifest: how Coral Server discovers, configures and runs this agent.
+# Reference: https://docs.coralos.ai/reference/agent
+# Options: https://docs.coralos.ai/reference/agent/tables/options
+# Marketplace: https://docs.coralos.ai/concepts/marketplace
 # =====================================================================================
-edition = 4
+edition = 5
 
 # =====================================================================================
 # [agent] — required metadata and optional discovery fields
@@ -15,17 +11,20 @@ edition = 4
 [agent]
 name = "coral-koog-agent"
 version = "1.1.0"
-summary = "A template agent built with Koog (Kotlin). Includes coral connectivity."
+summary = "A template agent built with Koog (Kotlin)."
 description = "A base template for creating Coral agents using the Koog framework in Kotlin."
 readme = """
-# Coral koog agent
+# Koog Template Agent
 
 This is a template for building autonomous agents in Kotlin using the Koog framework.
 """
 
+# The agent refreshes coral://instruction and coral://state into its system prompt every iteration
+capabilities = ["resources"]
+
 [agent.license]
-type = "text"
-text = "apache-2.0"
+type = "spdx"
+expression = "Apache-2.0"
 
 # =====================================================================================
 # [marketplace] — discovery, pricing, and identities
@@ -50,6 +49,9 @@ min = 0.10
 MAX_ITERATIONS = { type = "u32", default = 60, display.description = "The maximum number of LLM iterations (ignoring tool calls) to run." }
 ITERATION_DELAY_MS = { type = "u64", default = 0, display.description = "The number of milliseconds to wait between iterations. If left unspecified, no delay will occur between iterations." }
 MAX_TOKENS = { type = "u32", default = 150000, display.description = "The maximum number of tokens to use for this agent during the entire session." }
+CONTEXT_COMPRESSION_TOKENS = { type = "u32", default = 60000, display.description = "When a request's context reaches this many tokens, the conversation history is replaced with a summary. 0 disables compression." }
+DEV_CAPTURE_ENV = { type = "bool", default = false, display.group = "Development", display.description = "Development only (executable runtime): write this agent's session environment to coral-agent.dev.env and idle, so DevMain.kt can join the session from an IDE." }
+DEV_NATIVE_METADATA = { type = "bool", default = false, display.group = "Development", display.description = "Development only (executable runtime): run on GraalVM with its tracing agent and merge the metadata this run needs into src/native-image, for the native image build." }
 
 [options.EXTRA_SYSTEM_PROMPT]
 type = "string"
@@ -72,14 +74,14 @@ display.multiline = true
 [options.MODEL_CHOICE]
 type = "string"
 default = "LLM_FAST"
-display.description = "The model choice to use via LLM proxy. Options are LLM_FAST and LLM_BIG"
+display.description = "Which [[llm.proxies]] entry to use. The session decides which provider and model each one maps to."
 validation.variants = ["LLM_FAST", "LLM_BIG"]
 
-[options.MODEL_FORMAT]
+[options.REASONING_EFFORT]
 type = "string"
-default = "openai"
-display.description = "The model format to use (e.g. openai, anthropic, openrouter)"
-validation.variants = ["openai", "anthropic", "openrouter"]
+default = "none"
+display.description = "Reasoning effort for OpenAI-format reasoning models. Through Chat Completions, GPT-5.1 and newer only allow tools with \"none\"; gpt-5 and o-series models need \"minimal\" or higher. \"default\" leaves it to the provider."
+validation.variants = ["none", "minimal", "low", "medium", "high", "default"]
 
 [options.SYSTEM_PROMPT]
 type = "string"
@@ -99,20 +101,37 @@ display.multiline = true
 [[llm.proxies]]
 name = "LLM_FAST"
 format.type = "OpenAI"
-models = ["gpt-5.4-mini"]
+models = ["gpt-5.6-luna"]
 
 [[llm.proxies]]
 name = "LLM_BIG"
 format.type = "OpenAI"
-models = ["gpt-5.5"]
+models = ["gpt-5.6-sol"]
+
+# =====================================================================================
+# Claims: work this agent reports so the session's budget can be charged for it
+# =====================================================================================
+[[dependencies]]
+name = "llm"
+options = ["MODEL_CHOICE"]
+
+# No default cost: a session without a budget has $0 to spend, so a priced claim would stop the agent immediately.
+# Applications price claims per session (budgetSettings.claimTypeCosts, in micro cents: $1.00 = 100_000_000)
+# and set a budget, e.g. "claimTypeCosts": {"LLM_TOKENS": 100} for $1.00 per million tokens.
+[[claims]]
+name = "LLM_TOKENS"
+description = "One LLM token processed (input and output) through the LLM proxy"
+dependency = "llm"
 
 # =====================================================================================
 # Runtimes
 # =====================================================================================
 [runtimes.executable]
+# For local development. Production servers should use the docker runtime.
 path = "./gradlew"
 arguments = ["-q", "run"]
 
-
 #[runtimes.docker]
-#image = ""
+# The publish workflows generate a release coral-agent.toml with this section filled in.
+# Without a tag, Coral Server uses this agent's version as the image tag.
+#image = "ghcr.io/<owner>/<repo>"

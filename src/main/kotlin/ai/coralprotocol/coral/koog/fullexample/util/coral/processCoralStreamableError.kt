@@ -1,31 +1,25 @@
 package ai.coralprotocol.coral.koog.fullexample.util.coral
 
 import io.modelcontextprotocol.kotlin.sdk.client.StreamableHttpError
-import org.apache.hc.client5.http.HttpHostConnectException
+import java.net.ConnectException
 
-private fun processCoralStreamableError(e: StreamableHttpError): Throwable {
-    return if (e.code == 401) {
-        // Agent secret musn't be valid, wrap exception with more information
-        IllegalArgumentException(
-            "Can't connect to coral (401), likely session no longer exists or agent secret invalid",
+/**
+ * Adds context to the common ways connecting to Coral fails.
+ */
+fun processCoralThrowable(e: Throwable): Throwable {
+    val causes = generateSequence(e) { it.cause }
+    val httpError = causes.filterIsInstance<StreamableHttpError>().firstOrNull()
+    return when {
+        httpError?.code == 401 -> IllegalArgumentException(
+            "Can't connect to coral (401): the session likely no longer exists, or the agent secret is invalid",
             e
         )
-    } else {
-        e
-    }
-}
 
-fun processCoralThrowable(e: Throwable): Throwable = when (e) {
-    is StreamableHttpError -> return processCoralStreamableError(e)
-    is IllegalStateException -> {
-        return when (e.cause is HttpHostConnectException) {
-            true -> IllegalStateException(
-                "Coral server doesn't seem to be running or is running on a different port/address",
-                e
-            )
+        causes.any { it is ConnectException } -> IllegalStateException(
+            "Coral server doesn't seem to be running, or is running on a different address than CORAL_CONNECTION_URL",
+            e
+        )
 
-            else -> e
-        }
+        else -> e
     }
-    else -> e
 }

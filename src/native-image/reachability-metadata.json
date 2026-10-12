@@ -1,115 +1,125 @@
 {
   "reflection": [
     {
-      "type": "[Lio.ktor.network.selector.SelectInterest;"
+      "type": "ai.koog.agents.core.feature.debugger.Debugger"
     },
     {
-      "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels"
+      "type": "ai.koog.http.client.ktor.KtorKoogHttpClient$Factory"
     },
     {
-      "type": "ai.koog.prompt.executor.clients.openai.OpenAIModels$Chat",
+      "type": "ai.koog.prompt.executor.clients.anthropic.models.AnthropicResponse",
       "fields": [
         {
-          "name": "GPT4_1"
-        },
-        {
-          "name": "GPT4_1Mini"
-        },
-        {
-          "name": "GPT4_1Nano"
-        },
-        {
-          "name": "GPT4o"
-        },
-        {
-          "name": "GPT4oMini"
-        },
-        {
-          "name": "GPT5"
-        },
-        {
-          "name": "GPT5Codex"
-        },
-        {
-          "name": "GPT5Mini"
-        },
-        {
-          "name": "GPT5Nano"
-        },
-        {
-          "name": "GPT5Pro"
-        },
-        {
-          "name": "GPT5_1"
-        },
-        {
-          "name": "GPT5_1Codex"
-        },
-        {
-          "name": "GPT5_1CodexMax"
-        },
-        {
-          "name": "GPT5_2"
-        },
-        {
-          "name": "GPT5_2Codex"
-        },
-        {
-          "name": "GPT5_2Pro"
-        },
-        {
-          "name": "GPT5_3Codex"
-        },
-        {
-          "name": "GPT5_4"
-        },
-        {
-          "name": "GPT5_4Mini"
-        },
-        {
-          "name": "GPT5_4Nano"
-        },
-        {
-          "name": "GPT5_4Pro"
-        },
-        {
-          "name": "O1"
-        },
-        {
-          "name": "O3"
-        },
-        {
-          "name": "O3Mini"
-        },
-        {
-          "name": "O4Mini"
+          "name": "Companion"
         }
       ]
     },
     {
-      "type": "ai.koog.prompt.llm.LLModel"
-    },
-    {
-      "type": "io.ktor.client.HttpClient",
-      "fields": [
+      "type": "ai.koog.prompt.executor.clients.anthropic.models.AnthropicResponse$Companion",
+      "methods": [
         {
-          "name": "closed"
+          "name": "serializer",
+          "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "ai.koog.serialization.JSONObject",
+      "fields": [
+        {
+          "name": "Companion"
+        }
+      ]
+    },
+    {
+      "type": "ai.koog.serialization.JSONObject$Companion",
+      "methods": [
+        {
+          "name": "serializer",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "android.os.Build"
+    },
+    {
+      "type": "android.os.Build$VERSION"
+    },
+    {
+      "type": "com.aayushatharva.brotli4j.Brotli4jLoader"
+    },
+    {
+      "type": "com.github.luben.zstd.Zstd"
+    },
+    {
+      "type": "com.sun.crypto.provider.AESCipher$General",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.ARCFOURCipher",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.DESCipher",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.DESedeCipher",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.GaloisCounterMode$AESGCM",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.ktor.client.HttpClient"
     },
     {
       "type": "io.ktor.client.HttpClientConfig"
     },
     {
+      "type": "io.ktor.client.call.HttpClientCall"
+    },
+    {
       "type": "io.ktor.client.content.ProgressListener"
     },
     {
-      "type": "io.ktor.client.engine.HttpClientEngineBase",
-      "fields": [
-        {
-          "name": "closed"
-        }
-      ]
+      "type": "io.ktor.client.engine.HttpClientEngineBase"
     },
     {
       "type": "io.ktor.client.engine.HttpClientEngineCapability"
@@ -118,18 +128,31 @@
       "type": "io.ktor.client.engine.HttpClientEngineConfig"
     },
     {
+      "type": "io.ktor.client.engine.apache5.Apache5EngineContainer"
+    },
+    {
+      "type": "io.ktor.client.engine.apache5.ApacheRequestEntityProducer"
+    },
+    {
+      "type": "io.ktor.client.engine.apache5.ApacheResponseConsumer"
+    },
+    {
       "type": "io.ktor.client.engine.cio.CIOEngineContainer"
     },
     {
-      "type": "io.ktor.client.engine.cio.Endpoint",
-      "fields": [
-        {
-          "name": "connections"
-        }
-      ]
+      "type": "io.ktor.client.engine.cio.Endpoint"
     },
     {
       "type": "io.ktor.client.plugins.DefaultRequest"
+    },
+    {
+      "type": "io.ktor.client.plugins.HttpRetryDelayContext"
+    },
+    {
+      "type": "io.ktor.client.plugins.HttpRetryModifyRequestContext"
+    },
+    {
+      "type": "io.ktor.client.plugins.HttpRetryShouldRetryContext"
     },
     {
       "type": "io.ktor.client.plugins.HttpSend"
@@ -144,71 +167,46 @@
       "type": "io.ktor.client.plugins.api.ClientPluginInstance"
     },
     {
+      "type": "io.ktor.client.plugins.sse.ClientSSESession"
+    },
+    {
+      "type": "io.ktor.client.plugins.sse.DefaultClientSSESession"
+    },
+    {
+      "type": "io.ktor.client.plugins.sse.SSEBufferPolicy"
+    },
+    {
+      "type": "io.ktor.client.request.HttpRequest"
+    },
+    {
+      "type": "io.ktor.client.request.HttpRequestBuilder"
+    },
+    {
       "type": "io.ktor.client.request.ResponseAdapter"
+    },
+    {
+      "type": "io.ktor.client.statement.HttpResponse"
     },
     {
       "type": "io.ktor.http.ContentType"
     },
     {
-      "type": "io.ktor.network.selector.InterestSuspensionsMap",
-      "fields": [
-        {
-          "name": "acceptHandlerReference"
-        },
-        {
-          "name": "connectHandlerReference"
-        },
-        {
-          "name": "readHandlerReference"
-        },
-        {
-          "name": "writeHandlerReference"
-        }
-      ]
+      "type": "io.ktor.network.selector.InterestSuspensionsMap"
     },
     {
-      "type": "io.ktor.network.selector.LockFreeMPSCQueue",
-      "fields": [
-        {
-          "name": "curRef"
-        }
-      ]
+      "type": "io.ktor.network.selector.LockFreeMPSCQueue"
     },
     {
-      "type": "io.ktor.network.selector.LockFreeMPSCQueueCore",
-      "fields": [
-        {
-          "name": "nextRef"
-        },
-        {
-          "name": "stateRef"
-        }
-      ]
+      "type": "io.ktor.network.selector.LockFreeMPSCQueueCore"
     },
     {
-      "type": "io.ktor.network.selector.SelectableBase",
-      "fields": [
-        {
-          "name": "_interestedOps"
-        }
-      ]
+      "type": "io.ktor.network.selector.SelectInterest[]"
     },
     {
-      "type": "io.ktor.network.sockets.SocketBase",
-      "fields": [
-        {
-          "name": "actualCloseFlag"
-        },
-        {
-          "name": "closeFlag"
-        },
-        {
-          "name": "readerJob"
-        },
-        {
-          "name": "writerJob"
-        }
-      ]
+      "type": "io.ktor.network.selector.SelectableBase"
+    },
+    {
+      "type": "io.ktor.network.sockets.SocketBase"
     },
     {
       "type": "io.ktor.serialization.kotlinx.json.KotlinxSerializationJsonExtensionProvider"
@@ -217,38 +215,40 @@
       "type": "io.ktor.util.Attributes"
     },
     {
-      "type": "io.ktor.util.collections.CopyOnWriteHashMap",
-      "fields": [
-        {
-          "name": "current"
-        }
-      ]
+      "type": "io.ktor.util.collections.CopyOnWriteHashMap"
     },
     {
       "type": "io.ktor.util.reflect.TypeInfo"
     },
     {
-      "type": "io.modelcontextprotocol.kotlin.sdk.client.Client",
+      "type": "io.ktor.utils.io.ByteChannel"
+    },
+    {
+      "type": "io.ktor.utils.io.pool.DefaultPool"
+    },
+    {
+      "type": "io.modelcontextprotocol.kotlin.sdk.client.Client"
+    },
+    {
+      "type": "io.modelcontextprotocol.kotlin.sdk.shared.Protocol"
+    },
+    {
+      "type": "io.modelcontextprotocol.kotlin.sdk.types.CallToolResult"
+    },
+    {
+      "type": "io.modelcontextprotocol.kotlin.sdk.types.JSONRPCNotification",
       "fields": [
         {
-          "name": "roots"
+          "name": "Companion"
         }
       ]
     },
     {
-      "type": "io.modelcontextprotocol.kotlin.sdk.shared.Protocol",
-      "fields": [
+      "type": "io.modelcontextprotocol.kotlin.sdk.types.JSONRPCNotification$Companion",
+      "methods": [
         {
-          "name": "_notificationHandlers"
-        },
-        {
-          "name": "_progressHandlers"
-        },
-        {
-          "name": "_requestHandlers"
-        },
-        {
-          "name": "_responseHandlers"
+          "name": "serializer",
+          "parameterTypes": []
         }
       ]
     },
@@ -287,10 +287,36 @@
       ]
     },
     {
+      "type": "io.modelcontextprotocol.kotlin.sdk.types.TextContent",
+      "fields": [
+        {
+          "name": "Companion"
+        }
+      ]
+    },
+    {
+      "type": "io.modelcontextprotocol.kotlin.sdk.types.TextContent$Companion",
+      "methods": [
+        {
+          "name": "serializer",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "java.io.Serializable"
     },
     {
-      "type": "java.lang.Boolean"
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
     },
     {
       "type": "java.lang.Class",
@@ -305,16 +331,16 @@
       "type": "java.lang.ClassValue"
     },
     {
-      "type": "java.lang.Integer"
-    },
-    {
       "type": "java.lang.Object"
     },
     {
-      "type": "java.lang.String"
+      "type": "java.net.StandardSocketOptions"
     },
     {
-      "type": "java.net.StandardSocketOptions"
+      "type": "java.security.AlgorithmParametersSpi"
+    },
+    {
+      "type": "java.security.KeyStoreSpi"
     },
     {
       "type": "kotlin.Any"
@@ -329,7 +355,13 @@
       "type": "kotlin.Function2"
     },
     {
+      "type": "kotlin.Function3"
+    },
+    {
       "type": "kotlin.Int"
+    },
+    {
+      "type": "kotlin.Long"
     },
     {
       "type": "kotlin.Metadata",
@@ -369,15 +401,13 @@
       ]
     },
     {
-      "type": "kotlin.SafePublicationLazyImpl",
-      "fields": [
-        {
-          "name": "_value"
-        }
-      ]
+      "type": "kotlin.SafePublicationLazyImpl"
     },
     {
       "type": "kotlin.String"
+    },
+    {
+      "type": "kotlin.Throwable"
     },
     {
       "type": "kotlin.Unit"
@@ -413,253 +443,107 @@
       "type": "kotlin.reflect.jvm.internal.impl.load.java.JavaIncompatibilityRulesOverridabilityCondition"
     },
     {
-      "type": "kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
-      "allPublicFields": true
-    },
-    {
       "type": "kotlin.time.Duration"
     },
     {
-      "type": "kotlinx.coroutines.CancellableContinuationImpl",
-      "fields": [
+      "type": "kotlinx.coroutines.CancellableContinuationImpl"
+    },
+    {
+      "type": "kotlinx.coroutines.CancelledContinuation"
+    },
+    {
+      "type": "kotlinx.coroutines.CompletedExceptionally"
+    },
+    {
+      "type": "kotlinx.coroutines.DispatchedCoroutine"
+    },
+    {
+      "type": "kotlinx.coroutines.EventLoopImplBase"
+    },
+    {
+      "type": "kotlinx.coroutines.InvokeOnCancelling"
+    },
+    {
+      "type": "kotlinx.coroutines.JobSupport"
+    },
+    {
+      "type": "kotlinx.coroutines.JobSupport$Finishing"
+    },
+    {
+      "type": "kotlinx.coroutines.channels.BufferedChannel"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.ConcurrentLinkedListNode"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.DispatchedContinuation"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.LimitedDispatcher"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.LockFreeLinkedListNode"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.LockFreeTaskQueue"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.LockFreeTaskQueueCore"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.Segment"
+    },
+    {
+      "type": "kotlinx.coroutines.internal.ThreadSafeHeap"
+    },
+    {
+      "type": "kotlinx.coroutines.scheduling.CoroutineScheduler"
+    },
+    {
+      "type": "kotlinx.coroutines.scheduling.CoroutineScheduler$Worker"
+    },
+    {
+      "type": "kotlinx.coroutines.scheduling.WorkQueue"
+    },
+    {
+      "type": "kotlinx.coroutines.sync.MutexImpl"
+    },
+    {
+      "type": "kotlinx.coroutines.sync.SemaphoreAndMutexImpl"
+    },
+    {
+      "type": "kotlinx.io.RefCountingCopyTracker"
+    },
+    {
+      "type": "kotlinx.io.Source"
+    },
+    {
+      "type": "org.slf4j.simple.SimpleServiceProvider"
+    },
+    {
+      "type": "sun.net.www.protocol.http.Handler",
+      "methods": [
         {
-          "name": "_decisionAndIndex$volatile"
-        },
-        {
-          "name": "_parentHandle$volatile"
-        },
-        {
-          "name": "_state$volatile"
+          "name": "<init>",
+          "parameterTypes": []
         }
       ]
     },
     {
-      "type": "kotlinx.coroutines.CancelledContinuation",
-      "fields": [
+      "type": "sun.security.pkcs12.PKCS12KeyStore",
+      "methods": [
         {
-          "name": "_resumed$volatile"
+          "name": "<init>",
+          "parameterTypes": []
         }
       ]
     },
     {
-      "type": "kotlinx.coroutines.CompletedExceptionally",
-      "fields": [
+      "type": "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
+      "methods": [
         {
-          "name": "_handled$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.EventLoopImplBase",
-      "fields": [
-        {
-          "name": "_delayed$volatile"
-        },
-        {
-          "name": "_isCompleted$volatile"
-        },
-        {
-          "name": "_queue$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.InvokeOnCancelling",
-      "fields": [
-        {
-          "name": "_invoked$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.JobSupport",
-      "fields": [
-        {
-          "name": "_parentHandle$volatile"
-        },
-        {
-          "name": "_state$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.JobSupport$Finishing",
-      "fields": [
-        {
-          "name": "_exceptionsHolder$volatile"
-        },
-        {
-          "name": "_isCompleting$volatile"
-        },
-        {
-          "name": "_rootCause$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.channels.BufferedChannel",
-      "fields": [
-        {
-          "name": "_closeCause$volatile"
-        },
-        {
-          "name": "bufferEnd$volatile"
-        },
-        {
-          "name": "bufferEndSegment$volatile"
-        },
-        {
-          "name": "closeHandler$volatile"
-        },
-        {
-          "name": "completedExpandBuffersAndPauseFlag$volatile"
-        },
-        {
-          "name": "receiveSegment$volatile"
-        },
-        {
-          "name": "receivers$volatile"
-        },
-        {
-          "name": "sendSegment$volatile"
-        },
-        {
-          "name": "sendersAndCloseStatus$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.ConcurrentLinkedListNode",
-      "fields": [
-        {
-          "name": "_next$volatile"
-        },
-        {
-          "name": "_prev$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.DispatchedContinuation",
-      "fields": [
-        {
-          "name": "_reusableCancellableContinuation$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.LimitedDispatcher",
-      "fields": [
-        {
-          "name": "runningWorkers$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.LockFreeLinkedListNode",
-      "fields": [
-        {
-          "name": "_next$volatile"
-        },
-        {
-          "name": "_prev$volatile"
-        },
-        {
-          "name": "_removedRef$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.LockFreeTaskQueue",
-      "fields": [
-        {
-          "name": "_cur$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.LockFreeTaskQueueCore",
-      "fields": [
-        {
-          "name": "_next$volatile"
-        },
-        {
-          "name": "_state$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.Segment",
-      "fields": [
-        {
-          "name": "cleanedAndPointers$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.internal.ThreadSafeHeap",
-      "fields": [
-        {
-          "name": "_size$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.scheduling.CoroutineScheduler",
-      "fields": [
-        {
-          "name": "_isTerminated$volatile"
-        },
-        {
-          "name": "controlState$volatile"
-        },
-        {
-          "name": "parkedWorkersStack$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.scheduling.CoroutineScheduler$Worker",
-      "fields": [
-        {
-          "name": "workerCtl$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.scheduling.WorkQueue",
-      "fields": [
-        {
-          "name": "blockingTasksInBuffer$volatile"
-        },
-        {
-          "name": "consumerIndex$volatile"
-        },
-        {
-          "name": "lastScheduledTask$volatile"
-        },
-        {
-          "name": "producerIndex$volatile"
-        }
-      ]
-    },
-    {
-      "type": "kotlinx.coroutines.sync.SemaphoreAndMutexImpl",
-      "fields": [
-        {
-          "name": "_availablePermits$volatile"
-        },
-        {
-          "name": "deqIdx$volatile"
-        },
-        {
-          "name": "enqIdx$volatile"
-        },
-        {
-          "name": "head$volatile"
-        },
-        {
-          "name": "tail$volatile"
+          "name": "<init>",
+          "parameterTypes": []
         }
       ]
     },
@@ -682,9 +566,183 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "sun.security.provider.X509Factory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSAKeyFactory$Legacy",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.ssl.KeyManagerFactoryImpl$SunX509",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.ssl.SSLContextImpl$DefaultSSLContext",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.ssl.TrustManagerFactoryImpl$PKIXFactory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.AuthorityInfoAccessExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.AuthorityKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.BasicConstraintsExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.CRLDistributionPointsExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.CertificatePoliciesExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.ExtendedKeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.KeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.NetscapeCertTypeExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.PrivateKeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en"
     }
   ],
   "resources": [
+    {
+      "glob": "META-INF/services/ai.koog.http.client.KoogHttpClient$Factory"
+    },
     {
       "glob": "META-INF/services/io.ktor.client.HttpClientEngineContainer"
     },
@@ -693,6 +751,9 @@
     },
     {
       "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
     },
     {
       "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
@@ -710,30 +771,22 @@
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
-      "glob": "kotlin/time/time.kotlin_builtins"
+      "glob": "kotlin/collections/collections.kotlin_builtins"
     },
     {
       "glob": "kotlin/kotlin.kotlin_builtins"
     },
     {
-      "glob": "kotlin/collections/collections.kotlin_builtins"
+      "glob": "kotlin/time/time.kotlin_builtins"
     },
     {
-      "glob": "org/slf4j/impl/StaticLoggerBinder.class"
-    }
-  ],
-  "bundles": [],
-  "jni": [
+      "glob": "org/apache/hc/client5/version.properties"
+    },
     {
-      "type": "java.lang.Boolean",
-      "methods": [
-        {
-          "name": "getBoolean",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        }
-      ]
+      "glob": "org/publicsuffix/list/effective_tld_names.dat"
+    },
+    {
+      "glob": "simplelogger.properties"
     }
   ]
 }

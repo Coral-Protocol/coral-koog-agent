@@ -1,0 +1,11 @@
+# Keep build outputs and local state out of image builds.
+# coral-agent.dev.env contains a session's agent secret and must never be copied into an image.
+.git
+.gradle
+.idea
+.kotlin
+build
+buildSrc/.gradle
+buildSrc/build
+coral-agent.dev.env
+agent_log.json

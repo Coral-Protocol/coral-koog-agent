@@ -1,48 +1,49 @@
 # <agent name>
 ## Congratulations! You have a Coral agent!
 
-To learn more about CoralOS, check out [docs.coralos.ai](https://docs.coralos.ai).
+It is built with [Koog](https://docs.koog.ai) from the Coral Koog agent template. To learn more about CoralOS, check out [docs.coralos.ai](https://docs.coralos.ai).
 
 ## Running the agent
 (If you made this agent following a guide, feel free to skip this and return to the guide)
 
-### During development
-To run this agent, you'll need to first run the coral server and ensure it's configured to have this agent:
+Coral agents are started by Coral Server as part of a session; the server provides their options, LLM access and connection details as environment variables. Running the agent directly (`./gradlew run`) fails for that reason.
 
-### Running via a local coral server installation
-You can link this agent to your "agent home" directory, which will make it available to any coral server running on your machine:
-
+### 1. Make the agent available to your Coral Server
+Link it into your "agent home" directory, which makes it available to any Coral Server running on your machine:
 ```bash
 npx @coral-protocol/coralizer@latest link .
 ```
 
-Then run the coral server:
+### 2. Start Coral Server
+Follow the [quickstart](https://docs.coralos.ai/guides/quickstart). The server needs an LLM provider for this agent's `[[llm.proxies]]`, for example a Coral Cloud API key.
+
+When configuring your own provider, give the provider's root URL as its `base_url` (e.g. `https://api.openai.com`, not `https://api.openai.com/v1`); Koog adds the version to its request paths.
+
+### 3. Create a session that runs the agent
 ```bash
-npx coralos-dev@latest server start -- --auth.keys=dev
+./scripts/quick-session.sh
 ```
+Then watch it in the Coral Console at http://localhost:5555/ui/console. For repeated runs, a session template in the Console is the easiest way to manage options.
 
-### Running directly or via your IDE
-You can run this agent directly by first orchestrating it to run through the Coral Server and recording the environment variables it runs with.
+## Developing
 
-#### 1. Set the agent to record these values instead of running by
-Go to Main.kt and uncomment the main method at the bottom of the file.
+### Running from your IDE
+To debug the agent from your IDE while it takes part in a real session:
+1. Create a session with the `DEV_CAPTURE_ENV` option set to `true` (`DEV_CAPTURE_ENV=true ./scripts/quick-session.sh`). That agent writes its environment to `coral-agent.dev.env` and idles to keep the session alive.
+2. Run the `main` method in `DevMain.kt`. It loads `coral-agent.dev.env` and joins the session as the agent.
 
-#### 2. Create a session that runs this agent with a long timeout
+`coral-agent.dev.env` contains the session's agent secret. It is gitignored and excluded from Docker builds; don't share it.
 
-#### 3. Wait for the agent to finish saving the environment variables
-The agent will save the file once it starts. You can see it's done when the file is there, or by checking the agent's logs.
-(this may take a minute if it's the first time the agent is compiling)
+### Where to make changes
+- **Tools**: add Koog tools in `getToolRegistry` (`Main.kt`). Tools from other MCP servers can be added with `toolRegistryFromProcess`.
+- **Context management**: `compressContext` (`Main.kt`) decides what happens when the conversation gets long.
+- **Prompts and limits**: the options in `coral-agent.toml`, which applications can set per session.
+- **Budgets**: token usage is reported as `LLM_TOKENS` claims (`[[claims]]` in `coral-agent.toml`). Applications set the price and the budget per session; the agent stops when the budget runs out.
 
-It will stay running to keep the session alive.
+### LLM formats
+The agent uses the format each LLM proxy reports: OpenAI, Anthropic or DeepSeek. Coral Server 1.4.0 reports Anthropic proxies as OpenAI and has no DeepSeek format, so use a newer server for those.
 
-#### 4. Run the agent via DevMain.kt
-Now you can run the main method in DevMain.kt, which will load the environment variables from the file.
-
-If you're using IntelliJ (recommended), you can open this file in the IDE and run it directly by clicking the green play button next to the Main method.
-
-
-#### 5. Set the agent back to run normally
-Go to Main.kt and comment out the main method at the bottom of the file again. This lets the agent be orchestrated normally again.
+OpenAI-format requests use the Chat Completions API, where GPT-5.1 and newer only accept tools with reasoning turned off. That is the `REASONING_EFFORT` option's default (`none`); set it to `minimal` or higher for gpt-5 and o-series models, or `default` to leave it to the provider.
 
 ---
 
@@ -50,18 +51,12 @@ Go to Main.kt and comment out the main method at the bottom of the file again. T
 
 <details>
 <summary>Production usage</summary>
-This agent template is production-ready out of the box. See the `.github/workflows` for building prod images, and `coral-agent.toml`'s runtime section.
 
-Add the container tag to the `runtime` section of `coral-agent.toml`, and then distribute that `coral-agent.toml` file to whichever production coral server instances you want to run this agent on.
+Production servers should run agents with the docker runtime. The workflows in `.github/workflows` build JVM and native images, push them to GitHub's container registry and publish a release `coral-agent.toml` that references them. Distribute that file to the Coral Server instances that should run this agent.
 
-For more information about running coral in production, see [here](https://docs.coralos.ai/guides/production/running-in-production).
+The native image starts much faster, but only includes the reflection and resource metadata recorded in `src/native-image`. After adding libraries or code paths, record it again: run sessions that exercise the agent with the `DEV_NATIVE_METADATA` option set to `true`. This needs a GraalVM 25 JDK, which Gradle finds or downloads.
+
+For more information about running Coral in production, see [here](https://docs.coralos.ai/guides/production/running-in-production).
 </details>
-
-## devex notes
-
-### fast iteration
-We recommend creating a template in the coral console for easier development, especially if you end up with many options.
-For a cli alternative, there's a script in `scripts/quick-session.sh` that creates a session with this agent running.
-
 
 ---

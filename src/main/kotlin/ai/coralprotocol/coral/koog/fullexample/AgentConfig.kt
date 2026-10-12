@@ -1,5 +1,6 @@
 package ai.coralprotocol.coral.koog.fullexample
 
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -14,8 +15,10 @@ object AgentSettingsLoader {
 
 
 /**
- * Common Coral settings that are typically provided by the environment.
+ * Settings that Coral Server provides to every orchestrated agent.
  * These are not encouraged to be modified but are still loaded from the environment/dev env.
+ *
+ * See https://docs.coralos.ai/guides/writing-agents#orchestration-environment
  */
 data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val agentId = env["CORAL_AGENT_ID"]
@@ -24,14 +27,18 @@ data class CoralSettings(private val env: EnvironmentOptionProvider) {
     val connectionUrl = env["CORAL_CONNECTION_URL"]
     val runtimeId = env["CORAL_RUNTIME_ID"]
     val sessionId = env["CORAL_SESSION_ID"]
-    val sendClaims = env.getOptional("CORAL_SEND_CLAIMS")?.toInt() ?: 0
 
-    // note: we're masking some unused coral envs here. Feel free to change if multiple models are used.
-    val modelChoice = env.get("MODEL_CHOICE")
-    val modelProxyUrl = env.get("CORAL_PROXY_URL_$modelChoice")
-    val modelProxyModel = env.get("CORAL_PROXY_MODEL_$modelChoice")
-    val modelProxyFormat = env.get("CORAL_PROXY_FORMAT_$modelChoice")
-    val modelProxyProvider = env.getOptional("CORAL_PROXY_PROVIDER_$modelChoice") ?: "openai"
+    /** Extra system instructions the application supplied when creating the session, if any. */
+    val sessionSystemPrompt = env.getOptional("CORAL_PROMPT_SYSTEM")
+
+    /**
+     * One of the `[[llm.proxies]]` declared in coral-agent.toml, chosen by the MODEL_CHOICE option.
+     * Coral Server provides a URL, model and wire format for each declared proxy.
+     */
+    val modelChoice = env["MODEL_CHOICE"]
+    val modelProxyUrl = env["CORAL_PROXY_URL_$modelChoice"]
+    val modelProxyModel = env["CORAL_PROXY_MODEL_$modelChoice"]
+    val modelProxyFormat = env["CORAL_PROXY_FORMAT_$modelChoice"]
 }
 
 
@@ -40,12 +47,25 @@ data class ResolvedAgentSettings(val env: EnvironmentOptionProvider) {
     val extraSystemPrompt = env["EXTRA_SYSTEM_PROMPT"]
     val extraInitialUserPrompt = env["EXTRA_INITIAL_USER_PROMPT"]
     val followUpUserPrompt = env["FOLLOWUP_USER_PROMPT"]
-    val maxIterations = env.get("MAX_ITERATIONS").toInt()
-    val maxTokens = env.get("MAX_TOKENS").toInt()
-    val iterationDelayMs = env.get("ITERATION_DELAY_MS").toInt().milliseconds
+    val maxIterations = env["MAX_ITERATIONS"].toInt()
+    val maxTokens = env["MAX_TOKENS"].toLong()
+    val iterationDelayMs = env["ITERATION_DELAY_MS"].toLong().milliseconds
+    val contextCompressionTokens = env["CONTEXT_COMPRESSION_TOKENS"].toLong()
+    val reasoningEffort = env["REASONING_EFFORT"]
+    val devCaptureEnv = env.getOptional("DEV_CAPTURE_ENV") == "1"
 
     val coral = CoralSettings(env)
 }
+
+/** coral-agent.dev.env lines are `KEY=<JSON string>`, so multiline values (e.g. SYSTEM_PROMPT) fit on one line. */
+fun devEnvLine(key: String, value: String): String = "$key=${Json.encodeToString(value)}"
+
+fun parseDevEnv(lines: List<String>): Map<String, String> = lines
+    .filter { it.contains("=") && !it.startsWith("#") }
+    .associate { line ->
+        val (key, value) = line.split("=", limit = 2)
+        key.trim() to Json.decodeFromString<String>(value.trim())
+    }
 
 interface EnvironmentOptionProvider {
     /**
@@ -66,12 +86,7 @@ class CoralOptionProvider(useDevEnv: Boolean = true) :
             val file = File(devEnvFile)
             if (file.exists()) {
                 println("Informing: Reading from $devEnvFile")
-                file.readLines()
-                    .filter { it.contains("=") && !it.startsWith("#") }
-                    .associate { line ->
-                        val (key, value) = line.split("=", limit = 2)
-                        key.trim() to value.trim().removeSurrounding("\"")
-                    }
+                parseDevEnv(file.readLines())
             } else {
                 emptyMap()
             }
@@ -83,7 +98,11 @@ class CoralOptionProvider(useDevEnv: Boolean = true) :
 
     override fun get(name: String): String {
         return getOptional(name)
-            ?: throw IllegalArgumentException("Environment variable $name is required but not set (and not found in $devEnvFile)")
+            ?: throw IllegalArgumentException(
+                "Environment variable $name is required but not set (and not found in $devEnvFile).\n" +
+                        "This agent is meant to be started by Coral Server, which provides its options and CORAL_* " +
+                        "variables. Create a session with it (see scripts/quick-session.sh), or see DevMain.kt to run it from an IDE."
+            )
     }
 
     override fun getOptional(name: String): String? {

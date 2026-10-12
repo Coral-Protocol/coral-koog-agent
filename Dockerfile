@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/native-image-community:24 AS builder
+FROM ghcr.io/graalvm/native-image-community:25 AS builder
 WORKDIR /workspace
 
 COPY gradlew ./gradlew
@@ -15,15 +15,8 @@ FROM debian:12-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libc6 \
-    libgcc-s1 \
-    libstdc++6 \
-    zlib1g \
-    libssl3 \
     ca-certificates \
-    libz-dev \
-    libcurl4 \
-    procps \
+    zlib1g \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

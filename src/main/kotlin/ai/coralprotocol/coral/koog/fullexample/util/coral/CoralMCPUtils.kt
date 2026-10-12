@@ -3,34 +3,38 @@ package ai.coralprotocol.coral.koog.fullexample.util.coral
 import ai.coralprotocol.coral.koog.fullexample.ResolvedAgentSettings
 import ai.coralprotocol.coral.koog.fullexample.util.buildIndentedString
 import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
+import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_NAME
 import ai.koog.agents.mcp.McpToolRegistryProvider.DEFAULT_MCP_CLIENT_VERSION
 import ai.koog.agents.mcp.defaultStdioTransport
+import ai.koog.agents.mcp.fromProcess
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import io.ktor.client.*
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.sse.*
 import io.modelcontextprotocol.kotlin.sdk.client.Client
-import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
 import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import io.modelcontextprotocol.kotlin.sdk.client.StreamableHttpClientTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
-import io.modelcontextprotocol.kotlin.sdk.types.ClientCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequest
+import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequestParams
 import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 import kotlin.time.Clock.System
 import kotlin.time.Duration.Companion.seconds
 
-const val USD_PER_TOKEN = 0.000001
-
 fun buildSystemPrompt(settings: ResolvedAgentSettings): String {
     return buildString {
         appendLine(settings.systemPrompt)
-        appendLine()
+        settings.coral.sessionSystemPrompt?.takeIf { it.isNotBlank() }?.let {
+            appendLine()
+            appendLine(it)
+        }
         if (settings.extraSystemPrompt.isNotBlank()) {
+            appendLine()
             appendLine(settings.extraSystemPrompt)
         }
     }
@@ -50,60 +54,31 @@ fun buildInitialUserMessage(settings: ResolvedAgentSettings): String = buildInde
     appendLine("Remember that 'I' am not the user, who is not directly reachable. Use tools to interact with other agents as necessary to fulfil the users needs. You will receive further automated messages this way.")
 }
 
-
-suspend fun getMcpClientStreamableHttp(serverUrl: String): Client {
-    val transport = StreamableHttpClientTransport(
-        client = HttpClient {
-            install(SSE)
-            install(HttpTimeout) {
-                requestTimeoutMillis = 60000
-                connectTimeoutMillis = 60000
-                socketTimeoutMillis = 60000
-            }
-        },
-        url = serverUrl,
-        reconnectionTime = 10.seconds
-    )
-    val client = Client(
-        clientInfo = Implementation(name = DEFAULT_MCP_CLIENT_NAME, version = DEFAULT_MCP_CLIENT_VERSION),
-        options = ClientOptions(
-            ClientCapabilities(), enforceStrictCapabilities = false
-        )
-    )
-    client.connect(transport)
-    transport.onError { e ->
-        e.printStackTrace()
+/**
+ * Connects to this agent's Coral MCP server.
+ *
+ * [connectionUrl] must be the exact `CORAL_CONNECTION_URL` provided by Coral Server. It is a Streamable HTTP endpoint
+ * unless the runtime in coral-agent.toml sets `transport = "sse"`, in which case it ends with `/sse/`.
+ */
+suspend fun connectToCoral(connectionUrl: String, agentName: String): Client {
+    val httpClient = HttpClient(CIO) {
+        install(SSE)
+        install(HttpTimeout) {
+            // Must outlive Coral's longest blocking tool call (see CORAL_TOOL_CALL_TIMEOUT)
+            requestTimeoutMillis = CORAL_TOOL_CALL_TIMEOUT.inWholeMilliseconds
+            connectTimeoutMillis = 30.seconds.inWholeMilliseconds
+            socketTimeoutMillis = CORAL_TOOL_CALL_TIMEOUT.inWholeMilliseconds
+        }
     }
-    return client
-}
-
-suspend fun getMcpClientSse(serverUrl: String): Client {
-    val name: String = DEFAULT_MCP_CLIENT_NAME
-    val version: String = DEFAULT_MCP_CLIENT_VERSION
-    val transport = SseClientTransport(
-        client = HttpClient {
-            install(SSE)
-            // Supports wait for mentions up to the default max 60 seconds + 1 second buffer
-            install(HttpTimeout) {
-                requestTimeoutMillis = 61 * 1000
-                connectTimeoutMillis = 61 * 1000
-                socketTimeoutMillis = 61 * 1000
-            }
-        },
-        urlString = serverUrl,
-        reconnectionTime = 61.seconds
-    )
-
-    val client = Client(
-        clientInfo = Implementation(name = name, version = version), options = ClientOptions(
-            ClientCapabilities(), enforceStrictCapabilities = false
-        )
-    )
-    transport.onError { e ->
-        e.printStackTrace()
+    val transport = if (connectionUrl.trimEnd('/').endsWith("/sse")) {
+        SseClientTransport(client = httpClient, urlString = connectionUrl, reconnectionTime = 10.seconds)
+    } else {
+        StreamableHttpClientTransport(client = httpClient, url = connectionUrl)
     }
-    client.connect(transport)
+    transport.onError { e -> e.printStackTrace() }
 
+    val client = Client(clientInfo = Implementation(name = agentName, version = DEFAULT_MCP_CLIENT_VERSION))
+    client.connect(transport)
     return client
 }
 
@@ -164,16 +139,16 @@ object McpProcessUtils {
  * Creates an MCP client that uses Stdio to communicate with the given [process].
  */
 suspend fun getMcpClientStdio(process: Process): Client {
-    val transport = McpToolRegistryProvider.defaultStdioTransport(process)
-    val client = Client(
-        clientInfo = Implementation(name = DEFAULT_MCP_CLIENT_NAME, version = DEFAULT_MCP_CLIENT_VERSION),
-        options = ClientOptions(
-            ClientCapabilities(), enforceStrictCapabilities = false
-        )
-    )
-    client.connect(transport)
+    val client = Client(clientInfo = Implementation(name = DEFAULT_MCP_CLIENT_NAME, version = DEFAULT_MCP_CLIENT_VERSION))
+    client.connect(McpToolRegistryProvider.defaultStdioTransport(process))
     return client
 }
+
+/**
+ * Creates a tool registry from an MCP server launched as a local process, e.g.
+ * `toolRegistryFromProcess(McpProcessUtils.npx("@modelcontextprotocol/server-everything"))`.
+ */
+suspend fun toolRegistryFromProcess(process: Process): ToolRegistry = McpToolRegistryProvider.fromProcess(process)
 
 /**
  * Helper to construct a Stdio transport from an already-started process.
@@ -208,18 +183,19 @@ fun stdioTransportFromSafeCommand(
     env: Map<String, String> = emptyMap()
 ): Transport = McpToolRegistryProvider.defaultStdioTransport(McpProcessUtils.safeCommand(*args, env = env))
 
+/**
+ * Replaces the system message with [buildSystemPrompt] with its `<resource>` tags filled in from the Coral MCP server,
+ * so that coral://instruction and coral://state reflect the session as it is now.
+ */
 suspend fun AIAgentFunctionalContext.updateSystemResources(client: Client, settings: ResolvedAgentSettings) {
     val newSystemMessage = Message.System(
         injectedWithMcpResources(client, buildSystemPrompt(settings)),
         RequestMetaInfo(System.now())
     )
-    return llm.writeSession {
+    llm.writeSession {
         rewritePrompt { prompt ->
-            require(prompt.messages.firstOrNull() is Message.System) { "First message isn't a system message" }
-            require(prompt.messages.count { it is Message.System } == 1) { "Not exactly 1 system message" }
-            val messagesWithoutSystemMessage = prompt.messages.drop(1)
-            val messagesWithNewSystemMessage = listOf(newSystemMessage) + messagesWithoutSystemMessage
-            prompt.copy(messages = messagesWithNewSystemMessage)
+            // History compression can reorder messages, so drop the old system message wherever it is
+            prompt.copy(messages = listOf(newSystemMessage) + prompt.messages.filterNot { it is Message.System })
         }
     }
 }
@@ -231,7 +207,7 @@ suspend fun injectedWithMcpResources(client: Client, original: String): String {
     if (uris.isEmpty()) return original
 
     val resolvedResources = uris.map { uri ->
-        val resource = client.readResource(ReadResourceRequest(uri = uri))
+        val resource = client.readResource(ReadResourceRequest(ReadResourceRequestParams(uri = uri)))
         val contents = resource.contents.joinToString("\n") { (it as TextResourceContents).text }
         "<resource uri=\"$uri\">\n$contents\n</resource>"
     }

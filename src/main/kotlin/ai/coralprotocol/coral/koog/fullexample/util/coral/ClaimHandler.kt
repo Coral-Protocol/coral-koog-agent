@@ -2,101 +2,69 @@ package ai.coralprotocol.coral.koog.fullexample.util.coral
 
 import ai.coralprotocol.coral.koog.fullexample.CoralSettings
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.ResponseException
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 class ClaimError(message: String, val statusCode: Int, val body: String?) : RuntimeException(message)
 
-//TODO: Move to dedicated library
+/** Defaults must be encoded: the server's own default for [ClaimRequest.autoKill] is true. */
+internal val claimJson = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
+}
+
+@Serializable
+data class ClaimRequest(
+    val claimTypeName: String,
+    val quantity: UInt = 1u,
+    val additionalDescription: String? = null,
+    /** False lets this agent wind down itself when the budget runs out; the session may still kill it. */
+    val autoKill: Boolean = false,
+)
+
+/** Amounts are in micro cents: $1.00 is 100_000_000. */
+@Serializable
+data class ClaimResult(
+    val claimId: Int,
+    val requestedAmount: ULong,
+    val fulfilledAmount: ULong,
+    val remainingAgentBudget: ULong,
+    val remainingSessionBudget: ULong,
+    val shouldExit: Boolean,
+)
+
 /**
- * Minimal claims handler mirroring the Python version's behavior.
- * - Supported currencies: "coral", "micro_coral", "usd"
- * - Uses Coral Server env when orchestrated:
- *   - CORAL_SEND_CLAIMS == "1" to enable claim calls
- *   - CORAL_API_URL and CORAL_SESSION_ID must be provided by Coral when enabled
+ * Reports work to Coral Server so it can be charged against the session's budget.
+ *
+ * Claim types (and optionally a default cost) are declared in the `[[claims]]` section of coral-agent.toml. The
+ * application creating the session sets the budget and the cost of each claim type; unpriced claims are free but
+ * still recorded. When a claim exhausts the budget, [ClaimResult.shouldExit] tells the agent to stop.
+ *
+ * See https://docs.coralos.ai/concepts/payments
  */
-class ClaimHandler(private val coralSettings: CoralSettings? = null, private val currency: String = "micro_coral") : AutoCloseable {
-    private var remaining: Double? = null
-    private val http = HttpClient() // engine is provided transitively by koog
+class ClaimHandler(private val coral: CoralSettings) : AutoCloseable {
+    private val http = HttpClient(CIO)
 
-    init {
-        require(currency in setOf("coral", "micro_coral", "usd")) { "invalid currency $currency" }
-    }
-
-    fun noBudget(): Boolean = remaining?.let { it <= 0.0 } ?: false
-
-    fun remaining(): Double? = remaining
-
-    fun currency(): String = currency
-
-    /**
-     * Sends a claim to Coral Server for the given amount (in this handler's currency).
-     * Returns the remaining budget in the same currency.
-     */
-    suspend fun claim(amount: Double): Double {
-        val sendClaims = coralSettings?.sendClaims ?: System.getenv("CORAL_SEND_CLAIMS")?.toIntOrNull() ?: 0
-        if (sendClaims == 0) {
-            // Not orchestrated - skip claim
-            println("[ClaimHandler] Not orchestrated (CORAL_SEND_CLAIMS=0) - skipping claim of $amount $currency")
-            return remaining ?: Double.POSITIVE_INFINITY
+    suspend fun claim(claimTypeName: String, quantity: UInt, description: String? = null): ClaimResult {
+        val response = http.post("${coral.apiUrl.trimEnd('/')}/api/v1/agent-rpc/claim") {
+            bearerAuth(coral.agentSecret)
+            contentType(ContentType.Application.Json)
+            setBody(claimJson.encodeToString(ClaimRequest(claimTypeName, quantity, description)))
         }
 
-        val coralApiUrl = coralSettings?.apiUrl ?: System.getenv("CORAL_API_URL")
-            ?: throw IllegalArgumentException("CORAL_API_URL must be set by Coral when CORAL_SEND_CLAIMS=1")
-        val sessionId = coralSettings?.sessionId ?: System.getenv("CORAL_SESSION_ID")
-            ?: throw IllegalArgumentException("CORAL_SESSION_ID must be set by Coral when CORAL_SEND_CLAIMS=1")
+        val body = response.bodyAsText()
+        if (!response.status.isSuccess())
+            throw ClaimError("Claim of $quantity $claimTypeName failed with ${response.status}", response.status.value, body)
 
-        val json = """{"amount":{"type":"$currency","amount":$amount}}"""
-
-       return try {
-            val resp: HttpResponse = http.post("$coralApiUrl/api/v1/internal/claim/$sessionId") {
-                contentType(ContentType.Application.Json)
-                setBody(json)
-            }
-
-            val body = resp.bodyAsText()
-            if (resp.status.value == 200) {
-                // Very small parsing without external JSON libs
-                val remainingBudgetMicroCoral = extractNumber(body, "remainingBudget")
-                    ?: throw ClaimError("No remainingBudget in response", resp.status.value, body)
-                val coralUsdPrice = extractNumber(body, "coralUsdPrice") ?: 0.0
-
-                val rem = when (currency) {
-                    "coral" -> remainingBudgetMicroCoral / 1_000_000.0
-                    "micro_coral" -> remainingBudgetMicroCoral
-                    "usd" -> (remainingBudgetMicroCoral / 1_000_000.0) * coralUsdPrice
-                    else -> remainingBudgetMicroCoral // guarded by require, fallback for safety
-                }
-
-                println("[ClaimHandler] Claimed $amount $currency - remaining: $rem $currency")
-                this@ClaimHandler.remaining = rem
-                rem
-            } else {
-                this@ClaimHandler.remaining = 0.0
-                throw ClaimError(
-                    "Failed to claim $amount $currency - status ${resp.status.value}",
-                    resp.status.value,
-                    body
-                )
-            }
-        } catch (e: ResponseException) {
-            val status = e.response.status.value
-            val body = e.response.bodyAsText()
-            this@ClaimHandler.remaining = 0.0
-            throw ClaimError("Failed to claim $amount $currency - status $status", status, body)
-        }
-    }
-
-    private fun extractNumber(json: String, key: String): Double? {
-        // naive: find "key":<number>
-        val regex = Regex("\"$key\"\\s*:\\s*([0-9]+(\\.[0-9]+)?)")
-        val match = regex.find(json) ?: return null
-        return match.groupValues[1].toDoubleOrNull()
+        return claimJson.decodeFromString<ClaimResult>(body)
     }
 
     override fun close() {
