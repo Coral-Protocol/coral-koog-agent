@@ -134,7 +134,9 @@ async function main() {
     console.log('\n✅ Project created and hydrated successfully!');
     console.log(`\nNext steps:
   cd ${targetDir}
-  ./gradlew -q run
+  npx @coral-protocol/coralizer@latest link .   # make the agent available to Coral servers on this machine
+  # start Coral Server with an LLM provider: https://docs.coralos.ai/guides/quickstart
+  ./scripts/quick-session.sh                    # create a session that runs the agent
 `);
 }
 

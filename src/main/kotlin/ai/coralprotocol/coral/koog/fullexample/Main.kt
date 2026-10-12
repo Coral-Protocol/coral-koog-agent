@@ -1,26 +1,35 @@
 package ai.coralprotocol.coral.koog.fullexample
 
-import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
-import ai.coralprotocol.coral.koog.fullexample.util.findKoogModelByInfo
+import ai.coralprotocol.coral.koog.fullexample.util.ProxyFormat
 import ai.coralprotocol.coral.koog.fullexample.util.coral.*
 import ai.coralprotocol.coral.koog.fullexample.util.executeMultipleToolsCatching
+import ai.coralprotocol.coral.koog.fullexample.util.getPromptExecutor
+import ai.coralprotocol.coral.koog.fullexample.util.llmParams
+import ai.coralprotocol.coral.koog.fullexample.util.resolveModel
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.agents.core.environment.result
+import ai.koog.agents.core.dsl.extension.HistoryCompressionStrategy
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.mcp.McpToolRegistryProvider
-import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.dsl.prompt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
-private val logLatestLlmRequestToLogFile = true
+
+private const val logLatestLlmRequestToLogFile = true
 private val llmLogJson = Json {
     prettyPrint = true
     prettyPrintIndent = "  "
 }
-private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
+
+/** Declared in the `[[claims]]` section of coral-agent.toml. */
+private const val TOKEN_CLAIM_TYPE = "LLM_TOKENS"
+
+private fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegistry {
     return ToolRegistry {
         tools(coralToolRegistry.tools)
         //{CORALIZER:INSIDE_TOOL_REGISTRY_BLOCK}
@@ -30,130 +39,138 @@ private suspend fun getToolRegistry(coralToolRegistry: ToolRegistry): ToolRegist
 }
 
 /**
- * Real main method. This method is meant to be ran via orchestration (by creating a session).
+ * Real main method. This method is meant to be run via orchestration (by creating a session).
  * It ignores any local coral-agent.dev.env file.
  *
  * To run with the local dev env file, run the main method in DevMain.kt
  */
 fun main() {
     val settings: ResolvedAgentSettings = AgentSettingsLoader.load(useDevEnv = false)
+    if (settings.devCaptureEnv) {
+        captureDevEnvAndWait()
+        return
+    }
     runAgent(settings)
 }
 
 fun runAgent(settings: ResolvedAgentSettings) {
-    val effectiveConnectionUrl = settings.coral.connectionUrl
-    val effectiveModelProxyUrl = "${settings.coral.modelProxyUrl.trimEnd('/')}/openai"
+    val format = ProxyFormat.parse(settings.coral.modelProxyFormat)
+    val executor = getPromptExecutor(format, settings.coral.modelProxyUrl)
+    val llmModel = resolveModel(format, settings.coral.modelProxyModel)
 
     runBlocking {
-        val executor: PromptExecutor =
-            getPromptExecutor(
-                settings.coral.modelProxyFormat,
-                effectiveModelProxyUrl)
-
-        val llmModel =
-            findKoogModelByInfo(settings.coral.modelProxyModel, settings.coral.modelProxyProvider, settings.coral.modelProxyFormat)
-
-        println("Connecting to MCP server at $effectiveConnectionUrl")
-        println("Using LLM proxy at $effectiveModelProxyUrl")
+        println("Connecting to Coral at ${settings.coral.connectionUrl}")
+        println("Using model ${llmModel.id} (${format.name}) through LLM proxy ${settings.coral.modelChoice}")
 
         val coralMcpClient = try {
-            getMcpClientStreamableHttp(effectiveConnectionUrl)
+            connectToCoral(settings.coral.connectionUrl, settings.coral.agentId)
         } catch (e: Throwable) {
             throw processCoralThrowable(e)
         }
 
-        val coralToolRegistry = McpToolRegistryProvider.fromClient(coralMcpClient)
-        val combinedTools = getToolRegistry(coralToolRegistry)
-
+        val combinedTools = getToolRegistry(coralToolRegistry(coralMcpClient))
         println("Available tools: ${combinedTools.tools.joinToString { it.name }}")
 
+        ClaimHandler(settings.coral).use { claims ->
+            val loopAgent = AIAgent(
+                promptExecutor = executor,
+                agentConfig = AIAgentConfig(
+                    // The system prompt is set each iteration by updateSystemResources
+                    prompt = prompt("coral-agent", params = llmParams(format, llmModel, settings.reasoningEffort)) {},
+                    model = llmModel,
+                    maxAgentIterations = settings.maxIterations,
+                ),
+                toolRegistry = combinedTools,
+                strategy = functionalStrategy<Unit, Unit> {
+                    var totalTokens = 0L
 
-        val loopAgent = AIAgent.Companion(
-            systemPrompt = "", // This gets replaced later by updateSystemResources
-            promptExecutor = executor,
-            llmModel = llmModel,
-            toolRegistry = combinedTools,
-            strategy = functionalStrategy { _: Nothing? ->
-                val maxIterations = settings.maxIterations
-                val claimHandler = ClaimHandler(coralSettings = settings.coral, currency = "usd")
-                var totalTokens = 0L
-
-                repeat(maxIterations) { i ->
-                    try {
-                        if (claimHandler.noBudget()) return@functionalStrategy
-                        if (totalTokens >= settings.maxTokens) {
-                            println("Max tokens reached: $totalTokens >= ${settings.maxTokens}")
-                            return@functionalStrategy
-                        }
-
-                        if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
-                            println("Waiting ${settings.iterationDelayMs}ms before next iteration...")
-                            delay(settings.iterationDelayMs)
-                        }
-
-                        updateSystemResources(coralMcpClient, settings)
-                        val response =
-                            requestLLMOnlyCallingTools(if (i == 0) buildInitialUserMessage(settings) else settings.followUpUserPrompt)
-
-                        println("Iteration $i LLM response: ${response.content}")
-                        val toolsToCall = extractToolCalls(listOf(response))
-                        println("Extracted tool calls: ${toolsToCall.joinToString { it.tool }}")
-
-                        val toolResult = executeMultipleToolsCatching(toolsToCall)
-
-                        println("Executed tools, got ${toolResult.size} results: ${Json.encodeToString(toolResult.map { it.toMessage() })}")
-                        llm.writeSession {
-                            appendPrompt {
-                                tool {
-                                    toolResult.forEach { toolResult -> this@tool.result(toolResult) }
-                                }
-                            }
-                        }
-
-                        // For debugging: save the full prompt messages to a file
-                        if(logLatestLlmRequestToLogFile) {
-                            llm.readSession {
-                                val file = File("agent_log.json")
-                                file.writeText(llmLogJson.encodeToString(prompt.messages))
-                            }
-                        }
-
-                        val tokens = latestTokenUsage()
-                        totalTokens += tokens
-                        if (tokens > 0) {
-                            val toClaim = tokens.toDouble() * USD_PER_TOKEN
-                            try {
-                                claimHandler.claim(toClaim)
-                            } catch (e: Exception) {
-                                // If a claim fails, stop to avoid unpaid work when orchestrated
-                                e.printStackTrace()
+                    repeat(settings.maxIterations) { i ->
+                        try {
+                            if (totalTokens >= settings.maxTokens) {
+                                println("Max tokens reached: $totalTokens >= ${settings.maxTokens}")
                                 return@functionalStrategy
                             }
+
+                            if (i > 0 && settings.iterationDelayMs > 0.milliseconds) {
+                                println("Waiting ${settings.iterationDelayMs} before next iteration...")
+                                delay(settings.iterationDelayMs)
+                            }
+
+                            // Refresh coral://instruction and coral://state so the system prompt reflects the session as it is now
+                            updateSystemResources(coralMcpClient, settings)
+                            val response = requestLLMOnlyCallingTools(
+                                if (i == 0) buildInitialUserMessage(settings) else settings.followUpUserPrompt
+                            )
+
+                            val toolCalls = getToolCalls(response)
+                            println("Iteration $i: ${response.textContent().ifBlank { "(no text)" }} | tool calls: ${toolCalls.joinToString { it.tool }}")
+
+                            val toolResults = executeMultipleToolsCatching(toolCalls)
+                            llm.writeSession {
+                                appendPrompt {
+                                    user {
+                                        toolResults.forEach { toolResult(it.toMessagePart()) }
+                                    }
+                                }
+                            }
+
+                            // For debugging: save the full prompt messages to a file
+                            if (logLatestLlmRequestToLogFile) {
+                                llm.readSession {
+                                    File("agent_log.json").writeText(llmLogJson.encodeToString(prompt.messages))
+                                }
+                            }
+
+                            // The latest request's usage is roughly the size of the conversation so far
+                            val contextTokens = latestTokenUsage().toLong()
+                            totalTokens += contextTokens
+                            if (claimTokens(claims, contextTokens).shouldExit) {
+                                println("Budget exhausted, stopping")
+                                return@functionalStrategy
+                            }
+
+                            if (settings.contextCompressionTokens in 1..contextTokens) {
+                                compressContext(contextTokens)
+                                val compressionTokens = latestTokenUsage().toLong()
+                                totalTokens += compressionTokens
+                                if (claimTokens(claims, compressionTokens).shouldExit) return@functionalStrategy
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: ClaimError) {
+                            // Stop rather than keep doing work that can't be paid for
+                            println("Claim failed (${e.statusCode}): ${e.body}")
+                            return@functionalStrategy
+                        } catch (e: Exception) {
+                            println("Error during agent iteration: ${e.message}")
+                            e.printStackTrace()
                         }
-                    } catch (e: Exception) {
-                        println("Error during agent iteration: ${e.message}")
-                        e.printStackTrace()
                     }
                 }
-            }
-        )
+            )
 
-        loopAgent.run(null)
+            loopAgent.run(Unit)
+        }
+
+        coralMcpClient.close()
     }
 }
 
 /**
- * Uncomment this main method to get a printed environment variable file with exactly the environment variables that are passed
- * to this agent in the session (and no others).
+ * Context management: once the conversation grows past CONTEXT_COMPRESSION_TOKENS, replace it with an LLM-written
+ * summary. The system prompt is kept, and since it embeds coral://state, the current threads and messages are
+ * re-read every iteration rather than lost.
  *
- * The envs will be written to `coral-agent.dev.env`. Note the agent secret is good for only that session, make sure the TTL is set high.
- *
- * Then re-comment it for the agent to run normally through coral again.
- * This is useful for running the agent directly without needing to make a new session during development.
- * To run with the local dev env file, run the main method in DevMain.kt
- *
- * (Kotlin prioritizes the main method with an args parameter)
+ * This is the place to customise how this agent remembers; see Koog's HistoryCompressionStrategy implementations.
  */
-//fun main(args: Array<String>) {
-//    mainPrintDevEnv()
-//}
+private suspend fun AIAgentFunctionalContext.compressContext(contextTokens: Long) {
+    println("Context is $contextTokens tokens, compressing history")
+    compressHistory(HistoryCompressionStrategy.WholeHistory)
+}
+
+private suspend fun claimTokens(claims: ClaimHandler, tokens: Long): ClaimResult {
+    val result = claims.claim(TOKEN_CLAIM_TYPE, tokens.coerceIn(0, UInt.MAX_VALUE.toLong()).toUInt())
+    if (result.fulfilledAmount < result.requestedAmount)
+        println("Claimed ${result.fulfilledAmount} of ${result.requestedAmount} micro cents; remaining agent budget ${result.remainingAgentBudget}")
+    return result
+}

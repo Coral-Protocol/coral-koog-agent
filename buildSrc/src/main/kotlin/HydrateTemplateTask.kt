@@ -66,13 +66,11 @@ abstract class HydrateTemplateTask : DefaultTask() {
         updateSettingsFile(rootDir, agentName)
         updateAgentManifest(rootDir, agentName)
         updateReadme(rootDir, agentName)
-        updateQuickSessionScript(rootDir, agentName)
         renameSourcePackage(rootDir, packageName)
         manageWorkflows(rootDir)
         cleanCompiledOutput(rootDir)
-        removeGitRemoteOrigin(rootDir)
-        gitCreateBranch(rootDir, "main")
         removeHydratorArtifacts(rootDir)
+        startFreshGitHistory(rootDir)
 
         logStep("Committing hydrated state")
         gitCommit(rootDir, agentName)
@@ -280,23 +278,20 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
     }
 
-    private fun updateQuickSessionScript(rootDir: File, agentName: String) {
-        logStep("Updating scripts/quick-session.sh")
-        updateFile(rootDir.resolve("scripts/quick-session.sh")) { content ->
-            content.replace("AGENT_NAME=\${AGENT_NAME:-$TEMPLATE_AGENT_NAME}", "AGENT_NAME=\${AGENT_NAME:-$agentName}")
+    private fun renameSourcePackage(rootDir: File, packageName: String) {
+        logStep("Renaming package in source files: $TEMPLATE_PACKAGE -> $packageName")
+        val mainRoot = rootDir.resolve("src/main/kotlin")
+        if (!mainRoot.resolve(TEMPLATE_PACKAGE.replace('.', '/')).exists()) {
+            throw GradleException("Template source directory not found: ${mainRoot.resolve(TEMPLATE_PACKAGE.replace('.', '/'))}")
         }
+        listOf(mainRoot, rootDir.resolve("src/test/kotlin")).forEach { renamePackageIn(rootDir, it, packageName) }
     }
 
-    private fun renameSourcePackage(rootDir: File, packageName: String) {
-        val srcRoot = rootDir.resolve("src/main/kotlin")
+    private fun renamePackageIn(rootDir: File, srcRoot: File, packageName: String) {
         val templatePackagePath = TEMPLATE_PACKAGE.replace('.', '/')
         val newPackagePath = packageName.replace('.', '/')
         val oldPackageDir = srcRoot.resolve(templatePackagePath)
-
-        logStep("Renaming package in source files: $TEMPLATE_PACKAGE -> $packageName")
-        if (!oldPackageDir.exists()) {
-            throw GradleException("Template source directory not found: $oldPackageDir")
-        }
+        if (!oldPackageDir.exists()) return
 
         oldPackageDir.walkTopDown()
             .filter { it.isFile && it.extension == "kt" }
@@ -323,6 +318,10 @@ abstract class HydrateTemplateTask : DefaultTask() {
     private fun removeHydratorArtifacts(rootDir: File) {
         logStep("Removing hydrator code")
         gitRemove(rootDir, "buildSrc")
+        // git rm leaves buildSrc's ignored build outputs behind, and Gradle treats any buildSrc directory as a build
+        if (!rootDir.resolve("buildSrc").deleteRecursively()) {
+            logger.warn("Could not fully delete buildSrc; delete it manually")
+        }
         gitRemove(rootDir, "package.json")
         gitRemove(rootDir, "create-koog.js")
 
@@ -366,10 +365,9 @@ abstract class HydrateTemplateTask : DefaultTask() {
         logger.quiet("Main class: $mainClassFqn")
         logger.quiet("")
         logger.quiet("Next steps:")
-        logger.quiet("1. Review the changes")
-        logger.quiet("2. Set a new git remote: git remote add origin <your-repo-url>")
-        logger.quiet("3. Run: ./gradlew -q build")
-        logger.quiet("4. Run: ./gradlew -q run")
+        logger.quiet("1. Link the agent so Coral servers on this machine can run it: npx @coral-protocol/coralizer@latest link .")
+        logger.quiet("2. Start Coral Server with an LLM provider: https://docs.coralos.ai/guides/quickstart")
+        logger.quiet("3. Create a session that runs the agent: ./scripts/quick-session.sh")
         logger.quiet("")
     }
 
@@ -437,51 +435,21 @@ abstract class HydrateTemplateTask : DefaultTask() {
         }
     }
 
-    private fun removeGitRemoteOrigin(rootDir: File) {
-        val gitDir = rootDir.resolve(".git")
-        if (!gitDir.exists()) {
-            logStep("No .git directory found, skipping remote removal")
-            return
-        }
-
+    /**
+     * The new agent is its own project: replace the template's history (and its remote) with a fresh repository.
+     */
+    private fun startFreshGitHistory(rootDir: File) {
+        logStep("Starting a fresh git repository on branch main")
+        rootDir.resolve(".git").deleteRecursively()
         try {
-            val process = ProcessBuilder("git", "remote", "remove", "origin")
+            val process = ProcessBuilder("git", "init", "-q", "-b", "main")
                 .directory(rootDir)
                 .redirectErrorStream(true)
                 .start()
             val output = process.inputStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
-
-            if (exitCode == 0) {
-                logStep("Removed git remote 'origin'")
-            } else if (output.contains("No such remote") || output.contains("could not remove")) {
-                logStep("No git remote 'origin' found")
-            } else {
-                logger.warn("Failed to remove git remote 'origin': $output")
-            }
+            if (process.waitFor() != 0) logger.warn("git init failed: $output")
         } catch (e: Exception) {
-            logger.warn("Could not run 'git remote remove origin': ${e.message}")
-        }
-    }
-
-    private fun gitCreateBranch(rootDir: File, branchName: String) {
-        if (!rootDir.resolve(".git").exists()) return
-
-        try {
-            val process = ProcessBuilder("git", "checkout", "-B", branchName)
-                .directory(rootDir)
-                .redirectErrorStream(true)
-                .start()
-            val exitCode = process.waitFor()
-
-            if (exitCode == 0) {
-                logStep("Switched to branch '$branchName'")
-            } else {
-                val output = process.inputStream.bufferedReader().readText().trim()
-                logger.warn("Failed to checkout branch '$branchName': $output")
-            }
-        } catch (e: Exception) {
-            logger.warn("Could not run 'git checkout -B $branchName': ${e.message}")
+            logger.warn("Could not run 'git init': ${e.message}")
         }
     }
 
@@ -578,7 +546,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
                 "-c", "user.name=CoralOS",
                 "-c", "user.email=kooghydrator@coralos.ai",
                 "commit",
-                "-m", "Hydrate template: $agentName"
+                "-m", "Create $agentName from the Coral Koog agent template"
             )
                 .directory(rootDir)
                 .redirectErrorStream(true)
