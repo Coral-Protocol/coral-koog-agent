@@ -462,7 +462,8 @@ abstract class HydrateTemplateTask : DefaultTask() {
      * The new agent is its own project: replace the template's history (and its remote) with a fresh repository.
      *
      * Only a plain clone of the template is replaced. A repository with another origin (e.g. one created from the
-     * template on GitHub) or with commits of its own keeps its history, and hydration adds a commit to it.
+     * template on GitHub) is left as it is. A template clone with commits of its own keeps them, but is detached from
+     * the template like a fresh repository would be (see [detachFromTemplate]). Hydration then adds a commit to either.
      */
     private fun startFreshGitHistory(rootDir: File) {
         if (rootDir.resolve(".git").exists()) {
@@ -475,6 +476,7 @@ abstract class HydrateTemplateTask : DefaultTask() {
             val ownCommits = gitOutput(rootDir, "rev-list", "--count", "HEAD", "--not", "--remotes=origin")
             if (ownCommits != "0") {
                 logStep("Keeping the existing git history: it has commits that aren't in the template repository")
+                detachFromTemplate(rootDir)
                 return
             }
         }
@@ -490,6 +492,27 @@ abstract class HydrateTemplateTask : DefaultTask() {
             if (process.waitFor() != 0) logger.warn("git init failed: $output")
         } catch (e: Exception) {
             logger.warn("Could not run 'git init': ${e.message}")
+        }
+    }
+
+    /**
+     * For a template clone whose history is kept: remove the template's remote, so the new agent isn't pushed to or
+     * pulled from it, and move to branch main, as a fresh repository would.
+     */
+    private fun detachFromTemplate(rootDir: File) {
+        if (gitOutput(rootDir, "remote", "remove", "origin") != null) {
+            logStep("Removed the template's git remote 'origin'")
+        } else {
+            logStep("Warning: could not remove the template's git remote 'origin'; remove it with: git remote remove origin")
+        }
+
+        when {
+            gitOutput(rootDir, "branch", "--show-current") == "main" -> Unit
+            // Don't move an existing main branch; that could orphan its commits
+            gitOutput(rootDir, "rev-parse", "--verify", "--quiet", "refs/heads/main") != null ->
+                logStep("A branch named 'main' already exists; staying on the current branch")
+            gitOutput(rootDir, "checkout", "-q", "-b", "main") != null -> logStep("Switched to a new branch 'main'")
+            else -> logStep("Warning: could not switch to branch 'main'")
         }
     }
 

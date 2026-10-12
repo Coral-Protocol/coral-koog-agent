@@ -45,7 +45,9 @@ cd my-cool-agent
 - Updates `build.gradle.kts`, `settings.gradle.kts`, `coral-agent.toml` and this README with your project info.
 - Moves the sources to your package.
 - Removes the hydrator itself (`buildSrc`, `package.json`, `create-koog.js` and the `hydrate` task).
-- Starts a fresh git repository on `main` with one commit, replacing the template's history. A repository that isn't a plain clone of the template, such as one created from it on GitHub, keeps its history and gets one new commit.
+- Starts a fresh git repository on `main` with one commit, replacing the template's history and its remote.
+  - A template clone with commits of your own keeps them. The template remote is still removed, and work continues on a `main` branch.
+  - A repository created from the template on GitHub, or with any other origin, is left as it is apart from one new commit.
 
 ## Requirements
 - JDK 25. If it isn't installed, Gradle downloads it on first build.
