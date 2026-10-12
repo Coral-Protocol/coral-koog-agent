@@ -86,7 +86,7 @@ type = "string"
 display.description = "The system prompt to use"
 default = """
 You are an AI agent designed to assist users by leveraging available tools and resources. Follow the user's instructions carefully and utilize the tools at your disposal to provide accurate and helpful responses.
--- Start of messages and status --
+-- Start of messages an d status --
 <resource>coral://instruction</resource>
 <resource>coral://state</resource>
 -- End of messages and status --
