@@ -1,6 +1,6 @@
 {
   "name": "create-koog",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Initialize a new Coral Koog agent project",
   "bin": {
     "create-koog": "create-koog.js"
